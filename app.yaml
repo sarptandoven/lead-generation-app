@@ -1,8 +1,9 @@
 name: leadgen-app
+region: nyc # New York datacenter, change based on your target audience
 services:
   - name: backend
     github:
-      repo: your-github-username/LinkedIn-LeadGen-Webscrape
+      repo: sarptandoven/lead_generation_final_app
       branch: main
       deploy_on_push: true
     source_dir: backend
@@ -10,6 +11,18 @@ services:
     instance_size_slug: basic-xxs
     instance_count: 1
     run_command: uvicorn main:app --host 0.0.0.0 --port $PORT
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 30
+      period_seconds: 60
+    cors:
+      allow_origins:
+        - ${frontend.HOSTNAME}
+      allow_methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
     envs:
       - key: ENVIRONMENT
         value: production
@@ -19,10 +32,33 @@ services:
         type: SECRET
       - key: LINKEDIN_PW
         type: SECRET
+      - key: REDIS_URL
+        value: ${redis.DATABASE_URL}
+      - key: JWT_SECRET
+        type: SECRET
+        value: ${_self.JWT_SECRET}
+      - key: ALLOWED_ORIGINS
+        value: ${frontend.HOSTNAME}
+    routes:
+      - path: /api
+        preserve_path_prefix: true
+    alert_policies:
+      - name: high-cpu
+        rule: CPU_UTILIZATION > 80
+        duration: 5m
+        operator: GREATER_THAN
+        enabled: true
+        window: FIVE_MINUTES
+      - name: high-memory
+        rule: MEMORY_UTILIZATION > 80
+        duration: 5m
+        operator: GREATER_THAN
+        enabled: true
+        window: FIVE_MINUTES
 
   - name: frontend
     github:
-      repo: your-github-username/LinkedIn-LeadGen-Webscrape
+      repo: sarptandoven/lead_generation_final_app
       branch: main
       deploy_on_push: true
     source_dir: frontend
@@ -30,16 +66,91 @@ services:
     instance_size_slug: basic-xxs
     instance_count: 1
     build_command: npm install && npm run build
-    run_command: npm start
+    run_command: serve -s build -l $PORT
+    health_check:
+      http_path: /
+      initial_delay_seconds: 20
+      period_seconds: 60
     envs:
       - key: REACT_APP_API_URL
         value: ${backend.HOSTNAME}
       - key: REACT_APP_ENV
         value: production
+      - key: NODE_ENV
+        value: production
+    routes:
+      - path: /
+      - path: /static
+        preserve_path_prefix: true
+    alert_policies:
+      - name: high-cpu
+        rule: CPU_UTILIZATION > 80
+        duration: 5m
+        operator: GREATER_THAN
+        enabled: true
+        window: FIVE_MINUTES
 
 databases:
   - engine: PG
     name: db
     num_nodes: 1
     size: db-s-dev-database
-    version: "12" 
+    version: "12"
+    alerts:
+      - rule: DISK_UTILIZATION > 80
+        duration: 5m
+        operator: GREATER_THAN
+        enabled: true
+        window: FIVE_MINUTES
+    backups:
+      enabled: true
+      schedule:
+        frequency: DAILY
+        hour: 3
+        minute: 0
+    maintenance:
+      day: SUNDAY
+      hour: 2
+      minute: 0
+
+redis:
+  - name: redis
+    engine: REDIS
+    version: "6"
+    size: db-s-dev-database
+    num_nodes: 1
+    eviction_policy: volatile-lru
+    alerts:
+      - rule: MEMORY_UTILIZATION > 80
+        duration: 5m
+        operator: GREATER_THAN
+        enabled: true
+        window: FIVE_MINUTES
+
+domains:
+  - domain: leadgen.yourdomain.com
+    type: PRIMARY
+    wildcard: true
+    zone: yourdomain.com
+
+ingress:
+  rules:
+    - component:
+        name: frontend
+      match:
+        path: /
+    - component:
+        name: backend
+      match:
+        path: /api
+
+monitoring:
+  metrics:
+    - name: http_response_time
+      alert:
+        rule: AVG(http_response_time) > 1000
+        duration: 5m
+    - name: error_rate
+      alert:
+        rule: SUM(http_5xx) / SUM(http_requests) > 0.05
+        duration: 5m 

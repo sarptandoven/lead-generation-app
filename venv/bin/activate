@@ -39,10 +39,10 @@ deactivate nondestructive
 if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
     # transform D:\path\to\venv to /d/path/to/venv on MSYS
     # and to /cygdrive/d/path/to/venv on Cygwin
-    export VIRTUAL_ENV=$(cygpath "/Users/sarptandoven/Desktop/DOWNLOADS/LinkedIn-LeadGen-Webscrape-main/venv")
+    export VIRTUAL_ENV=$(cygpath "/Users/sarptandoven/Desktop/DOWNLOADS/lead_generation_final_app/venv")
 else
     # use the path as-is
-    export VIRTUAL_ENV="/Users/sarptandoven/Desktop/DOWNLOADS/LinkedIn-LeadGen-Webscrape-main/venv"
+    export VIRTUAL_ENV="/Users/sarptandoven/Desktop/DOWNLOADS/lead_generation_final_app/venv"
 fi
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -68,3 +68,45 @@ fi
 # Call hash to forget past commands. Without forgetting
 # past commands the $PATH changes we made may not be respected
 hash -r 2> /dev/null
+
+LINKEDIN_USERNAME=your_linkedin_username
+LINKEDIN_PW=your_linkedin_password
+DATABASE_URL=${db.DATABASE_URL}
+ENVIRONMENT=production
+
+REACT_APP_API_URL=${backend.HOSTNAME}
+REACT_APP_ENV=production
+
+region: nyc
+
+health_check:
+  http_path: /health
+  initial_delay_seconds: 30
+  period_seconds: 60
+
+cors:
+  allow_origins:
+    - ${frontend.HOSTNAME}
+  allow_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+
+- key: REDIS_URL
+  value: ${redis.DATABASE_URL}
+- key: JWT_SECRET
+  type: SECRET
+- key: ALLOWED_ORIGINS
+  value: ${frontend.HOSTNAME}
+
+alert_policies:
+  - name: high-cpu
+    rule: CPU_UTILIZATION > 80
+    duration: 5m
+
+backups:
+  enabled: true
+  schedule:
+    frequency: DAILY
+    hour: 3
