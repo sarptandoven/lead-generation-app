@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lead Generation App</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <base href="/lead-generation-app/">
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
@@ -84,6 +85,10 @@
     </div>
 
     <script>
+        // Get the repository name from the base tag
+        const basePath = document.querySelector('base').getAttribute('href');
+        
+        // Update API URL based on environment
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8000/api/v1' 
             : 'https://your-api-domain.com/api/v1';
