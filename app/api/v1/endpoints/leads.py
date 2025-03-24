@@ -1,9 +1,17 @@
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, conlist
+from app.schemas.lead import (
+    LeadRequest, 
+    LeadResponse, 
+    LeadAnalysisRequest, 
+    LeadAnalysisResponse,
+    Lead
+)
 from app.services.lead_generation import LeadGenerationService
 from app.services.lead_scoring import LeadScore
+from app.core.config import settings
 
 router = APIRouter()
 lead_service = LeadGenerationService()
@@ -65,10 +73,16 @@ class LeadAnalysis(BaseModel):
     analysis: str = Field(..., description="Detailed analysis of the leads")
     timestamp: str = Field(..., description="Timestamp of the analysis")
 
-@router.post("/generate", response_model=List[LeadResponse])
+@router.post("/generate", response_model=LeadResponse)
 async def generate_leads(request: LeadRequest):
     """
     Generate and score property manager leads based on location and criteria.
+    
+    This endpoint will:
+    1. Search for property managers in the specified location
+    2. Filter by property range
+    3. Score leads using AI
+    4. Return qualified leads sorted by score
     """
     try:
         leads = await lead_service.generate_leads(
@@ -77,7 +91,11 @@ async def generate_leads(request: LeadRequest):
             max_leads=request.max_leads,
             min_score=request.min_score
         )
-        return leads
+        
+        return LeadResponse(
+            data=leads,
+            message=f"Successfully generated {len(leads)} leads"
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -85,14 +103,23 @@ async def generate_leads(request: LeadRequest):
             detail=f"Error generating leads: {str(e)}"
         )
 
-@router.post("/analyze", response_model=List[LeadResponse])
+@router.post("/analyze", response_model=LeadAnalysisResponse)
 async def analyze_leads(request: LeadAnalysisRequest):
     """
     Analyze and score a list of existing leads.
+    
+    This endpoint will:
+    1. Score each lead using AI
+    2. Provide detailed analysis
+    3. Return scored leads with insights
     """
     try:
         analyzed_leads = await lead_service.analyze_leads(request.leads)
-        return analyzed_leads
+        
+        return LeadAnalysisResponse(
+            data=analyzed_leads,
+            message=f"Successfully analyzed {len(analyzed_leads)} leads"
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -102,20 +129,28 @@ async def analyze_leads(request: LeadAnalysisRequest):
 
 @router.get("/export")
 async def export_leads(
-    leads: List[dict] = Query(...),
+    leads: List[Lead] = Query(...),
     format: str = Query("csv", regex="^(csv|xlsx)$")
 ):
     """
     Export leads to CSV or Excel format.
+    
+    This endpoint will:
+    1. Take a list of leads
+    2. Convert them to the specified format
+    3. Return a downloadable file
     """
     try:
         file_data = await lead_service.export_leads(leads, format)
+        
+        headers = {
+            "Content-Disposition": f"attachment; filename=leads.{format}",
+            "Content-Type": "application/octet-stream"
+        }
+        
         return Response(
             content=file_data,
-            media_type="application/octet-stream",
-            headers={
-                "Content-Disposition": f"attachment; filename=leads.{format}"
-            }
+            headers=headers
         )
         
     except Exception as e:
