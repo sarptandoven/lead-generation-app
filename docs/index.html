@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Generation App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Lead Generation App</h1>
+        
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Search Leads</h2>
+            <form id="searchForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">Keywords (comma-separated)</label>
+                    <input type="text" id="keywords" class="w-full p-2 border rounded" 
+                           placeholder="property manager, real estate">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Location</label>
+                    <input type="text" id="location" class="w-full p-2 border rounded" 
+                           placeholder="New York">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Industry</label>
+                    <input type="text" id="industry" class="w-full p-2 border rounded" 
+                           placeholder="Real Estate">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Company Size</label>
+                    <select id="companySize" class="w-full p-2 border rounded">
+                        <option value="">Any</option>
+                        <option value="1-10">1-10</option>
+                        <option value="11-50">11-50</option>
+                        <option value="51-200">51-200</option>
+                        <option value="201-500">201-500</option>
+                        <option value="501+">501+</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Max Leads</label>
+                    <input type="number" id="maxLeads" class="w-full p-2 border rounded" 
+                           value="10" min="1" max="100">
+                </div>
+                <button type="submit" 
+                        class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors">
+                    Generate Leads
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Results</h2>
+            <div class="flex justify-between mb-4">
+                <button id="exportCsv" 
+                        class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition-colors">
+                    Export to CSV
+                </button>
+                <button id="analyzeLeads" 
+                        class="bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 transition-colors">
+                    Analyze Leads
+                </button>
+            </div>
+            <div id="leadsTable" class="overflow-x-auto">
+                <!-- Table will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Analysis Modal -->
+        <div id="analysisModal" class="fixed inset-0 bg-black bg-opacity-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-2xl mx-auto mt-20">
+                <h3 class="text-xl font-semibold mb-4">Lead Analysis</h3>
+                <div id="analysisContent" class="prose"></div>
+                <button onclick="closeAnalysisModal()" 
+                        class="mt-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000/api/v1' 
+            : 'https://your-api-domain.com/api/v1';
+
+        // Form submission
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim());
+            const data = {
+                keywords,
+                location: document.getElementById('location').value,
+                industry: document.getElementById('industry').value,
+                company_size: document.getElementById('companySize').value,
+                max_leads: parseInt(document.getElementById('maxLeads').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/leads/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Failed to generate leads');
+                
+                const leads = await response.json();
+                displayLeads(leads);
+                document.getElementById('results').classList.remove('hidden');
+            } catch (error) {
+                alert('Error generating leads: ' + error.message);
+            }
+        });
+
+        // Display leads in table
+        function displayLeads(leads) {
+            const table = document.createElement('table');
+            table.className = 'min-w-full divide-y divide-gray-200';
+            
+            // Create header
+            const thead = document.createElement('thead');
+            thead.className = 'bg-gray-50';
+            thead.innerHTML = `
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            // Create body
+            const tbody = document.createElement('tbody');
+            tbody.className = 'bg-white divide-y divide-gray-200';
+            leads.forEach((lead, i) => {
+                const tr = document.createElement('tr');
+                tr.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${lead.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.company}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.location}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.score.total.toFixed(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            const container = document.getElementById('leadsTable');
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        // Export to CSV
+        document.getElementById('exportCsv').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/leads/export`);
+                if (!response.ok) throw new Error('Failed to export leads');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'leads.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert('Error exporting leads: ' + error.message);
+            }
+        });
+
+        // Analyze leads
+        document.getElementById('analyzeLeads').addEventListener('click', async () => {
+            try {
+                const leads = Array.from(document.querySelectorAll('#leadsTable tbody tr')).map(row => ({
+                    name: row.cells[0].textContent,
+                    title: row.cells[1].textContent,
+                    company: row.cells[2].textContent,
+                    location: row.cells[3].textContent
+                }));
+
+                const response = await fetch(`${API_BASE_URL}/leads/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leads)
+                });
+
+                if (!response.ok) throw new Error('Failed to analyze leads');
+                
+                const analysis = await response.json();
+                document.getElementById('analysisContent').innerHTML = analysis.analysis.replace(/\n/g, '<br>');
+                document.getElementById('analysisModal').classList.remove('hidden');
+            } catch (error) {
+                alert('Error analyzing leads: ' + error.message);
+            }
+        });
+
+        // Close analysis modal
+        function closeAnalysisModal() {
+            document.getElementById('analysisModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html> 
