@@ -10,6 +10,7 @@ import {
   Rating,
   Avatar,
   useTheme,
+  IconButton,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import FeatureIcon from '../components/FeatureIcon';
@@ -52,8 +53,29 @@ const TestimonialCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(3),
 }));
 
+const DataSourceCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+  padding: theme.spacing(4),
+  cursor: 'pointer',
+  border: `2px solid transparent`,
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    transform: 'translateY(-4px)',
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
+  },
+  '&.selected': {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: 'rgba(255, 107, 61, 0.05)',
+  },
+}));
+
 const LandingPage: React.FC = () => {
   const theme = useTheme();
+  const [selectedSource, setSelectedSource] = React.useState<string | null>(null);
 
   const features = [
     {
@@ -91,6 +113,43 @@ const LandingPage: React.FC = () => {
       rating: 5,
     },
   ];
+
+  const dataSources = [
+    {
+      id: 'linkedin',
+      title: 'LinkedIn',
+      description: 'Access professional networks and business contacts',
+      icon: '🔗',
+    },
+    {
+      id: 'google',
+      title: 'Google My Business',
+      description: 'Find local businesses and their contact information',
+      icon: '🌐',
+    },
+    {
+      id: 'bing',
+      title: 'Bing Places',
+      description: 'Discover business listings and contact details',
+      icon: '🔍',
+    },
+    {
+      id: 'yellow-pages',
+      title: 'Yellow Pages',
+      description: 'Access comprehensive business directories',
+      icon: '📒',
+    },
+    {
+      id: 'crunchbase',
+      title: 'Crunchbase',
+      description: 'Get detailed company and investment data',
+      icon: '📊',
+    },
+  ];
+
+  const handleSourceSelect = (sourceId: string) => {
+    setSelectedSource(sourceId);
+  };
 
   return (
     <Box>
@@ -147,6 +206,42 @@ const LandingPage: React.FC = () => {
           </Grid>
         </Container>
       </HeroSection>
+
+      <Box sx={{ py: 12, backgroundColor: 'background.paper' }}>
+        <Container maxWidth="lg">
+          <FadeInSection>
+            <Typography variant="h2" align="center" gutterBottom>
+              Choose Your Data Source
+            </Typography>
+            <Typography variant="h5" align="center" color="text.secondary" sx={{ mb: 8 }}>
+              Select where you want to find your ideal customers
+            </Typography>
+          </FadeInSection>
+          
+          <Grid container spacing={4}>
+            {dataSources.map((source, index) => (
+              <Grid item xs={12} sm={6} md={4} lg={2.4} key={source.id}>
+                <FadeInSection delay={index * 0.1}>
+                  <DataSourceCard
+                    className={selectedSource === source.id ? 'selected' : ''}
+                    onClick={() => handleSourceSelect(source.id)}
+                  >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <FeatureIcon icon={source.icon} />
+                      <Typography variant="h6" gutterBottom>
+                        {source.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {source.description}
+                      </Typography>
+                    </Box>
+                  </DataSourceCard>
+                </FadeInSection>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
 
       <Box sx={{ py: 12, backgroundColor: 'background.paper' }}>
         <Container maxWidth="lg">
