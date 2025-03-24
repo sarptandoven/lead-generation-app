@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1440" height="800" viewBox="0 0 1440 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Buildings -->
+  <g opacity="0.1">
+    <!-- Tall Building 1 -->
+    <path d="M100 600V200h100v400h-100z" stroke="#2D3142" stroke-width="2"/>
+    <path d="M120 240h60v40h-60z M120 300h60v40h-60z M120 360h60v40h-60z M120 420h60v40h-60z M120 480h60v40h-60z M120 540h60v40h-60z" fill="#2D3142"/>
+    
+    <!-- Tall Building 2 -->
+    <path d="M300 650V150h120v500h-120z" stroke="#2D3142" stroke-width="2"/>
+    <path d="M320 190h80v40h-80z M320 250h80v40h-80z M320 310h80v40h-80z M320 370h80v40h-80z M320 430h80v40h-80z M320 490h80v40h-80z M320 550h80v40h-80z" fill="#2D3142"/>
+    
+    <!-- Medium Building -->
+    <path d="M500 500V300h80v200h-80z" stroke="#2D3142" stroke-width="2"/>
+    <path d="M520 340h40v40h-40z M520 400h40v40h-40z M520 460h40v40h-40z" fill="#2D3142"/>
+    
+    <!-- Small Building -->
+    <path d="M650 450V350h60v100h-60z" stroke="#2D3142" stroke-width="2"/>
+    <path d="M670 370h20v20h-20z M670 400h20v20h-20z" fill="#2D3142"/>
+  </g>
+  
+  <!-- Decorative Elements -->
+  <g opacity="0.1">
+    <!-- Clouds -->
+    <path d="M50 100c0-22.1 17.9-40 40-40s40 17.9 40 40-17.9 40-40 40-40-17.9-40-40z M120 80c0-16.6 13.4-30 30-30s30 13.4 30 30-13.4 30-30 30-30-13.4-30-30z" fill="#FF6B3D"/>
+    
+    <!-- Stars -->
+    <path d="M800 150l5 5-5 5-5-5 5-5z M900 100l4 4-4 4-4-4 4-4z M850 200l3 3-3 3-3-3 3-3z" fill="#FF6B3D"/>
+    
+    <!-- Circles -->
+    <circle cx="750" cy="300" r="8" fill="#FF6B3D" opacity="0.2"/>
+    <circle cx="950" cy="250" r="6" fill="#FF6B3D" opacity="0.2"/>
+    <circle cx="850" cy="150" r="4" fill="#FF6B3D" opacity="0.2"/>
+  </g>
+  
+  <!-- Abstract Shapes -->
+  <g opacity="0.1">
+    <path d="M1200 300l50 50-50 50-50-50 50-50z" stroke="#FF6B3D" stroke-width="2"/>
+    <path d="M1100 400c0 27.6-22.4 50-50 50s-50-22.4-50-50 22.4-50 50-50 50 22.4 50 50z" stroke="#FF6B3D" stroke-width="2"/>
+    <path d="M1300 200l-30 60 30 60 30-60-30-60z" stroke="#FF6B3D" stroke-width="2"/>
+  </g>
+</svg> 

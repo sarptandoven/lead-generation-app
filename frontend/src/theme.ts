@@ -1,119 +1,114 @@
-import { extendTheme } from '@chakra-ui/react';
+import { createTheme } from '@mui/material/styles';
 
-const colors = {
-  primary: {
-    50: '#fff3e6',
-    100: '#ffe0cc',
-    200: '#ffc299',
-    300: '#ffa366',
-    400: '#ff8533',
-    500: '#ff6600', // Main brand color from Corgi
-    600: '#cc5200',
-    700: '#993d00',
-    800: '#662900',
-    900: '#331400',
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#FF6B3D', // Orange primary color
+      light: '#FF8B66',
+      dark: '#E55A2F',
+      contrastText: '#FFFFFF',
+    },
+    secondary: {
+      main: '#2D3142', // Dark blue/gray for text
+      light: '#4A5169',
+      dark: '#1A1D29',
+      contrastText: '#FFFFFF',
+    },
+    background: {
+      default: '#FFFFFF',
+      paper: '#F8F9FA',
+    },
+    text: {
+      primary: '#2D3142',
+      secondary: '#6B7280',
+    },
   },
-  secondary: {
-    50: '#e6f5ff',
-    100: '#b3e0ff',
-    200: '#80ccff',
-    300: '#4db8ff',
-    400: '#1aa3ff',
-    500: '#0088ff',
-    600: '#006dd1',
-    700: '#0052a3',
-    800: '#003875',
-    900: '#001d47',
-  },
-  neutral: {
-    50: '#f7f7f7',
-    100: '#e3e3e3',
-    200: '#c8c8c8',
-    300: '#a4a4a4',
-    400: '#808080',
-    500: '#666666',
-    600: '#4d4d4d',
-    700: '#333333',
-    800: '#1a1a1a',
-    900: '#0d0d0d',
-  },
-};
-
-const fonts = {
-  heading: 'Inter, -apple-system, system-ui, sans-serif',
-  body: 'Inter, -apple-system, system-ui, sans-serif',
-};
-
-const components = {
-  Button: {
-    baseStyle: {
+  typography: {
+    fontFamily: '"Inter", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: '3.5rem',
+      fontWeight: 700,
+      lineHeight: 1.2,
+      marginBottom: '1rem',
+    },
+    h2: {
+      fontSize: '2.5rem',
+      fontWeight: 700,
+      lineHeight: 1.3,
+    },
+    h3: {
+      fontSize: '2rem',
       fontWeight: 600,
-      borderRadius: 'md',
+      lineHeight: 1.4,
     },
-    variants: {
-      solid: {
-        bg: 'primary.500',
-        color: 'white',
-        _hover: {
-          bg: 'primary.600',
-        },
-      },
-      outline: {
-        borderColor: 'primary.500',
-        color: 'primary.500',
-        _hover: {
-          bg: 'primary.50',
-        },
-      },
+    h4: {
+      fontSize: '1.5rem',
+      fontWeight: 600,
+      lineHeight: 1.4,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
     },
   },
-  Card: {
-    baseStyle: {
-      container: {
-        borderRadius: 'xl',
-        boxShadow: 'lg',
-      },
-    },
-  },
-  Input: {
-    variants: {
-      filled: {
-        field: {
-          bg: 'neutral.50',
-          _hover: {
-            bg: 'neutral.100',
-          },
-          _focus: {
-            bg: 'white',
-            borderColor: 'primary.500',
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: '8px',
+          padding: '10px 24px',
+          fontSize: '1rem',
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
           },
         },
+        contained: {
+          backgroundColor: '#FF6B3D',
+          '&:hover': {
+            backgroundColor: '#E55A2F',
+          },
+        },
+        outlined: {
+          borderColor: '#FF6B3D',
+          color: '#FF6B3D',
+          '&:hover': {
+            borderColor: '#E55A2F',
+            backgroundColor: 'rgba(255, 107, 61, 0.04)',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: '12px',
+          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)',
+          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
+          },
+        },
+      },
+    },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          paddingLeft: '24px',
+          paddingRight: '24px',
+        },
       },
     },
   },
-};
-
-const shadows = {
-  outline: '0 0 0 3px rgba(255, 102, 0, 0.2)',
-};
-
-const styles = {
-  global: {
-    body: {
-      bg: 'white',
-      color: 'neutral.800',
-    },
+  shape: {
+    borderRadius: 8,
   },
-};
+  spacing: 8,
+});
 
-export const theme = extendTheme({
-  colors,
-  fonts,
-  components,
-  shadows,
-  styles,
-  config: {
-    initialColorMode: 'light',
-    useSystemColorMode: false,
-  },
-}); 
+export default theme; 
