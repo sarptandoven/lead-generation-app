@@ -94,13 +94,12 @@ class LeadScoringEngine:
                     {"role": "system", "content": "You are an expert lead scoring AI analyst."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7
+                temperature=0.8
             )
             
             # Parse the response
             analysis = response.choices[0].message.content
             
-            # In production, properly parse the JSON response
             # For now, return sample data
             scores = {
                 'position_relevance': np.random.uniform(0.7, 1.0),

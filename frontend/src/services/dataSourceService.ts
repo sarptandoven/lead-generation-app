@@ -1,4 +1,14 @@
-import { SourceConfig } from '../contexts/DataSourceContext';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+
+// Create axios instance with base configuration
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface LeadSearchParams {
   query?: string;
@@ -29,13 +39,12 @@ export interface Lead {
   roles?: string[];
 }
 
-interface Contact {
+export interface Contact {
   name: string;
   title?: string;
   email?: string;
   phone?: string;
   linkedin?: string;
-  role?: string;
 }
 
 export interface RoleCategory {
@@ -46,55 +55,50 @@ export interface RoleCategory {
 }
 
 class DataSourceService {
-  private apiBaseUrl: string;
-
-  constructor() {
-    this.apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
-  }
-
-  async configureSource(sourceId: string, config: Partial<SourceConfig>): Promise<SourceConfig> {
-    const response = await fetch(`${this.apiBaseUrl}/api/sources/${sourceId}/configure`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(config),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to configure source: ${response.statusText}`);
+  async configureSource(sourceId: string, config: any): Promise<any> {
+    try {
+      const response = await apiClient.post(`/sources/${sourceId}/configure`, config);
+      return response.data;
+    } catch (error) {
+      console.error('Error configuring source:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async testSourceConnection(sourceId: string): Promise<{ success: boolean; error?: string }> {
-    const response = await fetch(`${this.apiBaseUrl}/api/sources/${sourceId}/test`, {
-      method: 'POST',
-    });
-
-    return response.json();
+    try {
+      const response = await apiClient.post(`/sources/${sourceId}/test`);
+      return response.data as { success: boolean; error?: string };
+    } catch (error) {
+      console.error('Error testing source connection:', error);
+      throw error;
+    }
   }
 
   async searchLeads(
     sources: string[],
     params: LeadSearchParams
   ): Promise<{ leads: Lead[]; total: number }> {
-    const queryParams = new URLSearchParams({
-      sources: sources.join(','),
-      ...Object.entries(params).reduce((acc, [key, value]) => ({
-        ...acc,
-        [key]: Array.isArray(value) ? value.join(',') : value,
-      }), {}),
-    });
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('sources', sources.join(','));
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (Array.isArray(value)) {
+            queryParams.append(key, value.join(','));
+          } else {
+            queryParams.append(key, String(value));
+          }
+        }
+      });
 
-    const response = await fetch(`${this.apiBaseUrl}/api/leads/search?${queryParams}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to search leads: ${response.statusText}`);
+      const response = await apiClient.get(`/leads/search?${queryParams}`);
+      return response.data as { leads: Lead[]; total: number };
+    } catch (error) {
+      console.error('Error searching leads:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getSourceStats(sourceId: string): Promise<{
@@ -103,25 +107,28 @@ class DataSourceService {
     requestsRemaining: number;
     requestsLimit: number;
   }> {
-    const response = await fetch(`${this.apiBaseUrl}/api/sources/${sourceId}/stats`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get source stats: ${response.statusText}`);
+    try {
+      const response = await apiClient.get(`/sources/${sourceId}/stats`);
+      return response.data as {
+        totalLeads: number;
+        lastSync: string;
+        requestsRemaining: number;
+        requestsLimit: number;
+      };
+    } catch (error) {
+      console.error('Error getting source stats:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async syncSource(sourceId: string): Promise<{ status: string; message: string }> {
-    const response = await fetch(`${this.apiBaseUrl}/api/sources/${sourceId}/sync`, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to sync source: ${response.statusText}`);
+    try {
+      const response = await apiClient.post(`/sources/${sourceId}/sync`);
+      return response.data as { status: string; message: string };
+    } catch (error) {
+      console.error('Error syncing source:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getSourceFilters(sourceId: string): Promise<{
@@ -129,43 +136,47 @@ class DataSourceService {
     industries: string[];
     companySizes: string[];
   }> {
-    const response = await fetch(`${this.apiBaseUrl}/api/sources/${sourceId}/filters`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get source filters: ${response.statusText}`);
+    try {
+      const response = await apiClient.get(`/sources/${sourceId}/filters`);
+      return response.data as {
+        locations: string[];
+        industries: string[];
+        companySizes: string[];
+      };
+    } catch (error) {
+      console.error('Error getting source filters:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getRoleCategories(): Promise<RoleCategory[]> {
-    const response = await fetch(`${this.apiBaseUrl}/api/roles/categories`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get role categories: ${response.statusText}`);
+    try {
+      const response = await apiClient.get(`/roles/categories`);
+      return response.data as RoleCategory[];
+    } catch (error) {
+      console.error('Error getting role categories:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async searchRoles(query: string): Promise<string[]> {
-    const response = await fetch(`${this.apiBaseUrl}/api/roles/search?q=${encodeURIComponent(query)}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to search roles: ${response.statusText}`);
+    try {
+      const response = await apiClient.get(`/roles/search?q=${encodeURIComponent(query)}`);
+      return response.data as string[];
+    } catch (error) {
+      console.error('Error searching roles:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getPopularRoles(): Promise<string[]> {
-    const response = await fetch(`${this.apiBaseUrl}/api/roles/popular`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get popular roles: ${response.statusText}`);
+    try {
+      const response = await apiClient.get(`/roles/popular`);
+      return response.data as string[];
+    } catch (error) {
+      console.error('Error getting popular roles:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getRoleStats(roles: string[]): Promise<{
@@ -174,17 +185,22 @@ class DataSourceService {
     topIndustries: { industry: string; count: number }[];
     roleDistribution: { role: string; percentage: number }[];
   }> {
-    const queryParams = new URLSearchParams({
-      roles: roles.join(','),
-    });
+    try {
+      const queryParams = new URLSearchParams({
+        roles: roles.join(','),
+      });
 
-    const response = await fetch(`${this.apiBaseUrl}/api/roles/stats?${queryParams}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get role stats: ${response.statusText}`);
+      const response = await apiClient.get(`/roles/stats?${queryParams}`);
+      return response.data as {
+        totalLeads: number;
+        averageSeniority: string;
+        topIndustries: { industry: string; count: number }[];
+        roleDistribution: { role: string; percentage: number }[];
+      };
+    } catch (error) {
+      console.error('Error getting role stats:', error);
+      throw error;
     }
-
-    return response.json();
   }
 }
 
