@@ -11,10 +11,14 @@ import {
   Avatar,
   useTheme,
   IconButton,
+  Dialog,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import FeatureIcon from '../components/FeatureIcon';
 import FadeInSection from '../components/FadeInSection';
+import DataSourceSelector from '../components/DataSourceSelector';
+import DataSourceConfig from '../components/DataSourceConfig';
+import { DataSourceProvider, useDataSources } from '../contexts/DataSourceContext';
 
 // Custom styled components
 const HeroSection = styled(Box)(({ theme }) => ({
@@ -53,29 +57,10 @@ const TestimonialCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(3),
 }));
 
-const DataSourceCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  textAlign: 'center',
-  padding: theme.spacing(4),
-  cursor: 'pointer',
-  border: `2px solid transparent`,
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-    transform: 'translateY(-4px)',
-    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
-  },
-  '&.selected': {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: 'rgba(255, 107, 61, 0.05)',
-  },
-}));
-
-const LandingPage: React.FC = () => {
+const LandingPageContent: React.FC = () => {
   const theme = useTheme();
-  const [selectedSource, setSelectedSource] = React.useState<string | null>(null);
+  const { selectedSources, setSelectedSources, sourceConfigs } = useDataSources();
+  const [configureSource, setConfigureSource] = React.useState<string | null>(null);
 
   const features = [
     {
@@ -114,41 +99,21 @@ const LandingPage: React.FC = () => {
     },
   ];
 
-  const dataSources = [
-    {
-      id: 'linkedin',
-      title: 'LinkedIn',
-      description: 'Access professional networks and business contacts',
-      icon: '🔗',
-    },
-    {
-      id: 'google',
-      title: 'Google My Business',
-      description: 'Find local businesses and their contact information',
-      icon: '🌐',
-    },
-    {
-      id: 'bing',
-      title: 'Bing Places',
-      description: 'Discover business listings and contact details',
-      icon: '🔍',
-    },
-    {
-      id: 'yellow-pages',
-      title: 'Yellow Pages',
-      description: 'Access comprehensive business directories',
-      icon: '📒',
-    },
-    {
-      id: 'crunchbase',
-      title: 'Crunchbase',
-      description: 'Get detailed company and investment data',
-      icon: '📊',
-    },
-  ];
+  const handleSourcesChange = (sources: string[]) => {
+    setSelectedSources(sources);
+    
+    // Check if any newly selected source needs configuration
+    const newSources = sources.filter(s => !selectedSources.includes(s));
+    if (newSources.length > 0) {
+      const unconfiguredSource = newSources.find(s => sourceConfigs[s]?.status !== 'configured');
+      if (unconfiguredSource) {
+        setConfigureSource(unconfiguredSource);
+      }
+    }
+  };
 
-  const handleSourceSelect = (sourceId: string) => {
-    setSelectedSource(sourceId);
+  const handleConfigured = () => {
+    setConfigureSource(null);
   };
 
   return (
@@ -164,19 +129,19 @@ const LandingPage: React.FC = () => {
                 <Typography variant="h4" color="text.secondary" sx={{ mb: 4 }}>
                   Find and connect with your ideal customers using AI-powered insights
                 </Typography>
-                <Button
+            <Button
                   variant="contained"
                   size="large"
                   sx={{ mr: 2 }}
-                >
-                  Get Started
-                </Button>
-                <Button
+            >
+              Get Started
+            </Button>
+            <Button
                   variant="outlined"
                   size="large"
                 >
                   Learn More
-                </Button>
+            </Button>
               </FadeInSection>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -211,35 +176,61 @@ const LandingPage: React.FC = () => {
         <Container maxWidth="lg">
           <FadeInSection>
             <Typography variant="h2" align="center" gutterBottom>
-              Choose Your Data Source
+              Choose Your Data Sources
             </Typography>
-            <Typography variant="h5" align="center" color="text.secondary" sx={{ mb: 8 }}>
-              Select where you want to find your ideal customers
+            <Typography variant="h5" align="center" color="text.secondary" sx={{ mb: 4 }}>
+              Select one or more sources to find your ideal customers
+            </Typography>
+            <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 8 }}>
+              Combine multiple sources to get comprehensive lead data and insights
             </Typography>
           </FadeInSection>
           
-          <Grid container spacing={4}>
-            {dataSources.map((source, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={2.4} key={source.id}>
-                <FadeInSection delay={index * 0.1}>
-                  <DataSourceCard
-                    className={selectedSource === source.id ? 'selected' : ''}
-                    onClick={() => handleSourceSelect(source.id)}
-                  >
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <FeatureIcon icon={source.icon} />
-                      <Typography variant="h6" gutterBottom>
-                        {source.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {source.description}
-                      </Typography>
-                    </Box>
-                  </DataSourceCard>
-                </FadeInSection>
-              </Grid>
-            ))}
-          </Grid>
+          <FadeInSection>
+            <DataSourceSelector
+              selectedSources={selectedSources}
+              onSourcesChange={handleSourcesChange}
+            />
+          </FadeInSection>
+
+          {selectedSources.length > 0 && (
+            <FadeInSection>
+              <Box sx={{ mt: 4, textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => {
+                    // Check if all selected sources are configured
+                    const unconfiguredSource = selectedSources.find(
+                      s => sourceConfigs[s]?.status !== 'configured'
+                    );
+                    if (unconfiguredSource) {
+                      setConfigureSource(unconfiguredSource);
+                    } else {
+                      // Proceed with configured sources
+                      console.log('Proceeding with sources:', selectedSources);
+                    }
+                  }}
+                >
+                  Continue with {selectedSources.length} {selectedSources.length === 1 ? 'Source' : 'Sources'}
+                </Button>
+              </Box>
+            </FadeInSection>
+          )}
+
+          <Dialog
+            open={!!configureSource}
+            onClose={() => setConfigureSource(null)}
+            maxWidth="md"
+            fullWidth
+          >
+            {configureSource && (
+              <DataSourceConfig
+                sourceId={configureSource}
+                onConfigured={handleConfigured}
+              />
+            )}
+          </Dialog>
         </Container>
       </Box>
 
@@ -314,7 +305,7 @@ const LandingPage: React.FC = () => {
             ))}
           </Grid>
         </Container>
-      </Box>
+        </Box>
 
       <Box sx={{ py: 12, backgroundColor: theme.palette.primary.main }}>
         <Container maxWidth="lg">
@@ -326,7 +317,7 @@ const LandingPage: React.FC = () => {
               <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
                 Join thousands of companies already using our platform
               </Typography>
-              <Button
+            <Button
                 variant="contained"
                 size="large"
                 sx={{
@@ -338,12 +329,20 @@ const LandingPage: React.FC = () => {
                 }}
               >
                 Start Free Trial
-              </Button>
-            </Box>
+            </Button>
+          </Box>
           </FadeInSection>
         </Container>
-      </Box>
+          </Box>
     </Box>
+  );
+};
+
+const LandingPage: React.FC = () => {
+  return (
+    <DataSourceProvider>
+      <LandingPageContent />
+    </DataSourceProvider>
   );
 };
 
