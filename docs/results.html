@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Property Manager Leads</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .highlight {
+            color: #FF6B35;
+        }
+        .btn-export {
+            background-color: #FF6B35;
+            color: white;
+            transition: all 0.3s ease;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            width: 200px;
+            text-align: center;
+            margin: 10px;
+        }
+        .btn-export:hover {
+            background-color: #E85A2C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .leads-table {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .leads-table::-webkit-scrollbar {
+            width: 8px;
+        }
+        .leads-table::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .leads-table::-webkit-scrollbar-thumb {
+            background: #FF6B35;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 fade-in">
+    <div class="container mx-auto px-4 py-12">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">
+            Your <span class="highlight">Leads</span> Are Ready
+        </h1>
+
+        <div class="flex justify-center mb-12 space-x-4">
+            <button class="btn-export" onclick="downloadCSV()">
+                Download CSV
+            </button>
+            <button class="btn-export" onclick="downloadExcel()">
+                Download Excel
+            </button>
+            <a href="index.html" class="btn-export bg-gray-600 hover:bg-gray-700">
+                New Search
+            </a>
+        </div>
+
+        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-xl p-8">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Preview Your Leads</h2>
+            <div class="leads-table">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Properties</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // retrieve leads from localStorage (set by the main page)
+            const leads = JSON.parse(localStorage.getItem('generatedLeads') || '[]');
+            displayLeads(leads);
+        });
+
+        function displayLeads(leads) {
+            const tbody = document.getElementById('leadsTableBody');
+            tbody.innerHTML = leads.map(lead => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${lead.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.company}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.properties}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.location}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lead.contact}</td>
+                </tr>
+            `).join('');
+        }
+
+        function downloadCSV() {
+            const leads = JSON.parse(localStorage.getItem('generatedLeads') || '[]');
+            const csv = convertToCSV(leads);
+            downloadFile(csv, 'property_manager_leads.csv', 'text/csv');
+        }
+
+        function downloadExcel() {
+            const leads = JSON.parse(localStorage.getItem('generatedLeads') || '[]');
+            // Convert to XLSX format
+            // This is a simplified version 
+            downloadFile(convertToExcel(leads), 'property_manager_leads.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        }
+
+        function convertToCSV(leads) {
+            const headers = ['Name', 'Company', 'Properties', 'Location', 'Contact'];
+            const rows = leads.map(lead => [
+                lead.name,
+                lead.company,
+                lead.properties,
+                lead.location,
+                lead.contact
+            ]);
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
