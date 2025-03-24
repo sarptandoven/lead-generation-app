@@ -110,7 +110,7 @@ const Footer = () => {
           <Box>
             <Image h="24px" src="/logo.svg" alt="Logo" mb={2} />
             <Box color="gray.500" fontSize="sm">
-              © {new Date().getFullYear()} Your Company. All rights reserved.
+              © {new Date().getFullYear()} All rights reserved.
             </Box>
           </Box>
           <HStack spacing={8} mt={{ base: 4, md: 0 }}>

@@ -117,7 +117,7 @@ const Settings: React.FC = () => {
                 sx={{ mb: 2 }}
               />
               <Typography variant="body2" color="textSecondary">
-                Your API key for external integrations
+                API key for external integrations
               </Typography>
             </CardContent>
           </Card>

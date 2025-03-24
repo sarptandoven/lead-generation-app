@@ -236,7 +236,7 @@ class LeadScoringEngine:
 
 # Example usage:
 """
-engine = LeadScoringEngine(openai_api_key='your-api-key')
+engine = LeadScoringEngine(openai_api_key='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')
 
 lead = LeadProfile(
     name="John Doe",

@@ -43,10 +43,10 @@ A powerful lead generation application that helps identify and score potential p
    PROJECT_NAME="Lead Generation API"
    API_V1_STR="/api/v1"
    BACKEND_CORS_ORIGINS=["http://localhost:5173"]
-   SECRET_KEY="your-secret-key"
-   OPENAI_API_KEY="your-openai-api-key"
-   LINKEDIN_USERNAME="your-linkedin-username"
-   LINKEDIN_PASSWORD="your-linkedin-password"
+   SECRET_KEY="af1ce48397382f85624882c59bdedd0353c1917b4a119f68f03c7c2f35cd7c39"
+   OPENAI_API_KEY="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"
+   LINKEDIN_USERNAME="bobthebuilde444@gmail.com"
+   LINKEDIN_PASSWORD="bobthebuilder1@"
    ```
 
 5. Start the backend server:
