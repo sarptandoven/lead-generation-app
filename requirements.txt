@@ -1,3 +1,4 @@
+setuptools>=41.0.0
 appnope==0.1.2
 argon2-cffi==20.1.0
 async-generator==1.10
@@ -73,3 +74,10 @@ webdriver-manager==3.2.2
 webencodings==0.5.1
 widgetsnbextension==3.5.1
 zipp==3.4.0
+python3-distutils
+python3-dev
+python3-setuptools
+build-essential
+python3-pip
+gcc
+g++
