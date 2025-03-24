@@ -1,4 +1,4 @@
-# AI-Powered Lead Generation System
+# ai-powered lead generation system
 
 a production-ready lead generation system that combines multiple data sources and AI-powered analysis to identify and qualify property management leads.
 
