@@ -2,7 +2,7 @@
 name = "lead-generation-api"
 version = "1.0.0"
 description = "AI-powered lead generation system for property managers"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["sarp doven <sarptandoven@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
