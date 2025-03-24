@@ -1,28 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   IconButton,
-  Box,
   Menu,
   MenuItem,
-  Avatar,
+  Box,
 } from '@mui/material';
 import {
+  AccountCircle,
   Dashboard as DashboardIcon,
-  Add as AddIcon,
-  People as PeopleIcon,
+  Group as GroupIcon,
   Settings as SettingsIcon,
-  Notifications as NotificationsIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -32,89 +30,67 @@ const Navbar: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    // Implement logout logic here
+  const handleNavigate = (path: string) => {
+    navigate(path);
     handleClose();
-    navigate('/login');
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1, cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
-          LeadGen Pro
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Lead Generation App
         </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
-            color="inherit"
-            onClick={() => navigate('/')}
-            sx={{ color: isActive('/') ? 'secondary.main' : 'inherit' }}
+            color={isActive('/dashboard') ? 'secondary' : 'inherit'}
+            onClick={() => handleNavigate('/dashboard')}
           >
             <DashboardIcon />
           </IconButton>
-
+          
           <IconButton
-            color="inherit"
-            onClick={() => navigate('/generate')}
-            sx={{ color: isActive('/generate') ? 'secondary.main' : 'inherit' }}
+            color={isActive('/lead-generation') ? 'secondary' : 'inherit'}
+            onClick={() => handleNavigate('/lead-generation')}
           >
             <AddIcon />
           </IconButton>
-
+          
           <IconButton
-            color="inherit"
-            onClick={() => navigate('/leads')}
-            sx={{ color: isActive('/leads') ? 'secondary.main' : 'inherit' }}
+            color={isActive('/lead-management') ? 'secondary' : 'inherit'}
+            onClick={() => handleNavigate('/lead-management')}
           >
-            <PeopleIcon />
+            <GroupIcon />
           </IconButton>
-
+          
           <IconButton
-            color="inherit"
-            onClick={() => navigate('/settings')}
-            sx={{ color: isActive('/settings') ? 'secondary.main' : 'inherit' }}
+            color={isActive('/settings') ? 'secondary' : 'inherit'}
+            onClick={() => handleNavigate('/settings')}
           >
             <SettingsIcon />
           </IconButton>
-
-          <IconButton color="inherit">
-            <NotificationsIcon />
-          </IconButton>
-
+          
           <IconButton
             onClick={handleMenu}
-            size="small"
-            sx={{ ml: 2 }}
-            aria-controls={Boolean(anchorEl) ? 'account-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={Boolean(anchorEl) ? 'true' : undefined}
+            color="inherit"
           >
-            <Avatar sx={{ width: 32, height: 32 }}>U</Avatar>
+            <AccountCircle />
           </IconButton>
-
-          <Menu
-            anchorEl={anchorEl}
-            id="account-menu"
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            onClick={handleClose}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            <MenuItem onClick={() => { handleClose(); navigate('/profile'); }}>
-              Profile
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
         </Box>
+        
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={() => handleNavigate('/profile')}>Profile</MenuItem>
+          <MenuItem onClick={() => handleNavigate('/logout')}>Logout</MenuItem>
+        </Menu>
       </Toolbar>
     </AppBar>
   );

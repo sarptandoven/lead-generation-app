@@ -1,392 +1,124 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
+  Container,
   Grid,
-  TextField,
-  Button,
-  Switch,
-  FormControlLabel,
-  Divider,
-  Alert,
-  CircularProgress,
   Card,
   CardContent,
-  CardActions,
+  Typography,
+  TextField,
+  Switch,
+  FormControlLabel,
+  Button,
+  Box,
 } from '@mui/material';
 
 interface Settings {
-  linkedin: {
-    enabled: boolean;
-    username: string;
-    password: string;
-    maxLeadsPerSearch: number;
-  };
-  airbnb: {
-    enabled: boolean;
-    maxListingsPerSearch: number;
-    minPrice: number;
-    maxPrice: number;
-  };
-  web: {
-    enabled: boolean;
-    maxResultsPerQuery: number;
-    excludedDomains: string[];
-  };
-  notifications: {
-    email: boolean;
-    slack: boolean;
-    webhook: boolean;
-    webhookUrl: string;
-  };
-  ai: {
-    enabled: boolean;
-    model: string;
-    confidenceThreshold: number;
-  };
+  emailNotifications: boolean;
+  leadScoreThreshold: number;
+  autoAssignment: boolean;
+  apiKey: string;
 }
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({
-    linkedin: {
-      enabled: false,
-      username: '',
-      password: '',
-      maxLeadsPerSearch: 100,
-    },
-    airbnb: {
-      enabled: false,
-      maxListingsPerSearch: 50,
-      minPrice: 0,
-      maxPrice: 1000,
-    },
-    web: {
-      enabled: false,
-      maxResultsPerQuery: 20,
-      excludedDomains: [],
-    },
-    notifications: {
-      email: true,
-      slack: false,
-      webhook: false,
-      webhookUrl: '',
-    },
-    ai: {
-      enabled: true,
-      model: 'gpt-4',
-      confidenceThreshold: 0.8,
-    },
+    emailNotifications: true,
+    leadScoreThreshold: 70,
+    autoAssignment: false,
+    apiKey: '********-****-****-****-************',
   });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://localhost:8000/settings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch settings');
-      }
-      const data = await response.json();
-      setSettings(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const response = await fetch('http://localhost:8000/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
-      }
-
-      setSuccess('Settings saved successfully');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleChange = (section: keyof Settings, field: string, value: any) => {
-    setSettings(prev => ({
+  const handleChange = (field: keyof Settings) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = event.target.type === 'checkbox' 
+      ? event.target.checked 
+      : event.target.value;
+    
+    setSettings((prev) => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
+      [field]: value,
     }));
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleSave = () => {
+    console.log('Saving settings:', settings);
+    // Implement API call to save settings
+  };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
         Settings
       </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
       <Grid container spacing={3}>
-        {/* LinkedIn Settings */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                LinkedIn Settings
+                Notifications
               </Typography>
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.linkedin.enabled}
-                    onChange={(e) => handleChange('linkedin', 'enabled', e.target.checked)}
-                  />
-                }
-                label="Enable LinkedIn Scraping"
-              />
-              <TextField
-                fullWidth
-                label="Username"
-                value={settings.linkedin.username}
-                onChange={(e) => handleChange('linkedin', 'username', e.target.value)}
-                margin="normal"
-                disabled={!settings.linkedin.enabled}
-              />
-              <TextField
-                fullWidth
-                label="Password"
-                type="password"
-                value={settings.linkedin.password}
-                onChange={(e) => handleChange('linkedin', 'password', e.target.value)}
-                margin="normal"
-                disabled={!settings.linkedin.enabled}
-              />
-              <TextField
-                fullWidth
-                label="Max Leads Per Search"
-                type="number"
-                value={settings.linkedin.maxLeadsPerSearch}
-                onChange={(e) => handleChange('linkedin', 'maxLeadsPerSearch', parseInt(e.target.value))}
-                margin="normal"
-                disabled={!settings.linkedin.enabled}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Airbnb Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Airbnb Settings
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.airbnb.enabled}
-                    onChange={(e) => handleChange('airbnb', 'enabled', e.target.checked)}
-                  />
-                }
-                label="Enable Airbnb Scraping"
-              />
-              <TextField
-                fullWidth
-                label="Max Listings Per Search"
-                type="number"
-                value={settings.airbnb.maxListingsPerSearch}
-                onChange={(e) => handleChange('airbnb', 'maxListingsPerSearch', parseInt(e.target.value))}
-                margin="normal"
-                disabled={!settings.airbnb.enabled}
-              />
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="Min Price"
-                    type="number"
-                    value={settings.airbnb.minPrice}
-                    onChange={(e) => handleChange('airbnb', 'minPrice', parseInt(e.target.value))}
-                    margin="normal"
-                    disabled={!settings.airbnb.enabled}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Price"
-                    type="number"
-                    value={settings.airbnb.maxPrice}
-                    onChange={(e) => handleChange('airbnb', 'maxPrice', parseInt(e.target.value))}
-                    margin="normal"
-                    disabled={!settings.airbnb.enabled}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Web Scraping Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Web Scraping Settings
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.web.enabled}
-                    onChange={(e) => handleChange('web', 'enabled', e.target.checked)}
-                  />
-                }
-                label="Enable Web Scraping"
-              />
-              <TextField
-                fullWidth
-                label="Max Results Per Query"
-                type="number"
-                value={settings.web.maxResultsPerQuery}
-                onChange={(e) => handleChange('web', 'maxResultsPerQuery', parseInt(e.target.value))}
-                margin="normal"
-                disabled={!settings.web.enabled}
-              />
-              <TextField
-                fullWidth
-                label="Excluded Domains (comma-separated)"
-                value={settings.web.excludedDomains.join(', ')}
-                onChange={(e) => handleChange('web', 'excludedDomains', e.target.value.split(',').map(d => d.trim()))}
-                margin="normal"
-                disabled={!settings.web.enabled}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Notification Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Notification Settings
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.notifications.email}
-                    onChange={(e) => handleChange('notifications', 'email', e.target.checked)}
+                    checked={settings.emailNotifications}
+                    onChange={handleChange('emailNotifications')}
                   />
                 }
                 label="Email Notifications"
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.notifications.slack}
-                    onChange={(e) => handleChange('notifications', 'slack', e.target.checked)}
-                  />
-                }
-                label="Slack Notifications"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.notifications.webhook}
-                    onChange={(e) => handleChange('notifications', 'webhook', e.target.checked)}
-                  />
-                }
-                label="Webhook Notifications"
-              />
+              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                Receive email notifications for new leads and updates
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Lead Scoring
+              </Typography>
               <TextField
                 fullWidth
-                label="Webhook URL"
-                value={settings.notifications.webhookUrl}
-                onChange={(e) => handleChange('notifications', 'webhookUrl', e.target.value)}
-                margin="normal"
-                disabled={!settings.notifications.webhook}
+                label="Lead Score Threshold"
+                type="number"
+                value={settings.leadScoreThreshold}
+                onChange={handleChange('leadScoreThreshold')}
+                helperText="Minimum score for lead qualification"
+                sx={{ mb: 2 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.autoAssignment}
+                    onChange={handleChange('autoAssignment')}
+                  />
+                }
+                label="Automatic Lead Assignment"
               />
             </CardContent>
           </Card>
         </Grid>
 
-        {/* AI Settings */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                AI Settings
+                API Configuration
               </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.ai.enabled}
-                    onChange={(e) => handleChange('ai', 'enabled', e.target.checked)}
-                  />
-                }
-                label="Enable AI Lead Scoring"
-              />
               <TextField
                 fullWidth
-                label="AI Model"
-                value={settings.ai.model}
-                onChange={(e) => handleChange('ai', 'model', e.target.value)}
-                margin="normal"
-                disabled={!settings.ai.enabled}
+                label="API Key"
+                type="password"
+                value={settings.apiKey}
+                onChange={handleChange('apiKey')}
+                sx={{ mb: 2 }}
               />
-              <TextField
-                fullWidth
-                label="Confidence Threshold"
-                type="number"
-                value={settings.ai.confidenceThreshold}
-                onChange={(e) => handleChange('ai', 'confidenceThreshold', parseFloat(e.target.value))}
-                margin="normal"
-                disabled={!settings.ai.enabled}
-                inputProps={{ min: 0, max: 1, step: 0.1 }}
-              />
+              <Typography variant="body2" color="textSecondary">
+                Your API key for external integrations
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -395,13 +127,13 @@ const Settings: React.FC = () => {
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
         <Button
           variant="contained"
+          color="primary"
           onClick={handleSave}
-          disabled={saving}
         >
-          {saving ? <CircularProgress size={24} /> : 'Save Settings'}
+          Save Changes
         </Button>
       </Box>
-    </Box>
+    </Container>
   );
 };
 
