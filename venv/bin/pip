@@ -1,4 +1,4 @@
-#!/Users/sarptandoven/Desktop/DOWNLOADS/LinkedIn-LeadGen-Webscrape-main/venv/bin/python3.12
+#!/Users/sarptandoven/lead_generation_final_app-2/venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

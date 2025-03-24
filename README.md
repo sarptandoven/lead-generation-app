@@ -1,112 +1,148 @@
-# Lead Generation Application
+# Lead Generation App
 
-A FastAPI-based application for lead generation and management, featuring automated data collection from LinkedIn and email outreach capabilities.
+A powerful lead generation application that helps identify and score potential property management leads using AI and web scraping.
 
 ## Features
 
-- LinkedIn profile data scraping
-- Email template management
-- Automated email outreach
-- Lead status tracking
-- Export functionality
-- User authentication and authorization
+- 🔍 Advanced lead search with multiple criteria
+- 💯 AI-powered lead scoring
+- 📊 Detailed lead analysis
+- 📥 Export leads to CSV
+- 🌐 Modern web interface
+- 🔒 Secure API endpoints
 
-## Prerequisites
+## Tech Stack
 
-- Python 3.8+
-- PostgreSQL
-- Docker (optional)
+- Backend: FastAPI
+- Frontend: HTML/JavaScript with Tailwind CSS
+- AI: OpenAI GPT-4
+- Data: Web scraping with async support
+- Deployment: GitHub Pages + FastAPI on Cloud
 
-## Setup
+## Local Development Setup
 
 1. Clone the repository:
-```bash
-git clone <repository-url>
-cd lead-generation-app
-```
+   ```bash
+   git clone https://github.com/yourusername/lead-generation-app.git
+   cd lead-generation-app
+   ```
 
 2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
 3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Set up environment variables:
-Create a `.env` file in the root directory with the following variables:
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/lead_generation
-SECRET_KEY=your-secret-key
-LINKEDIN_EMAIL=your-linkedin-email
-LINKEDIN_PASSWORD=your-linkedin-password
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-```
+4. Create a `.env` file in the root directory:
+   ```env
+   PROJECT_NAME="Lead Generation API"
+   API_V1_STR="/api/v1"
+   BACKEND_CORS_ORIGINS=["http://localhost:5173"]
+   SECRET_KEY="your-secret-key"
+   OPENAI_API_KEY="your-openai-api-key"
+   LINKEDIN_USERNAME="your-linkedin-username"
+   LINKEDIN_PASSWORD="your-linkedin-password"
+   ```
 
-5. Initialize the database:
-```bash
-python app/db/init_db.py
-```
+5. Start the backend server:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
 
-## Running the Application
+6. Open `app/static/index.html` in your browser or serve it with a local server:
+   ```bash
+   python -m http.server 5173 --directory app/static
+   ```
 
-### Local Development
-```bash
-uvicorn app.main:app --reload
-```
+## Deployment
 
-### Docker
-```bash
-docker-compose up --build
-```
+### Backend Deployment
 
-The application will be available at `http://localhost:8000`
+1. Set up your GitHub repository:
+   - Push your code to GitHub
+   - Go to Settings > Pages
+   - Set up GitHub Pages from the `gh-pages` branch
 
-API documentation will be available at:
-- Swagger UI: `http://localhost:8000/docs`
+2. Set up GitHub Secrets:
+   - Go to Settings > Secrets
+   - Add the following secrets:
+     - `OPENAI_API_KEY`
+     - `LINKEDIN_USERNAME`
+     - `LINKEDIN_PASSWORD`
+     - `SECRET_KEY`
+
+3. The GitHub Actions workflow will automatically:
+   - Run tests
+   - Build the application
+   - Deploy to GitHub Pages
+
+### Frontend Deployment
+
+The frontend is automatically deployed to GitHub Pages when you push to the main branch.
+
+## API Documentation
+
+Once the server is running, visit:
+- API docs: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## Usage
+## Development
 
-1. Access the web interface at `http://localhost:8000`
-2. Log in with your credentials
-3. Configure your LinkedIn and email settings
-4. Start generating and managing leads
-
-## Project Structure
-
+### Project Structure
 ```
 lead-generation-app/
 ├── app/
 │   ├── api/
+│   │   └── v1/
+│   │       └── endpoints/
+│   │           └── leads.py
 │   ├── core/
-│   ├── db/
-│   ├── models/
-│   ├── schemas/
+│   │   └── config.py
 │   ├── services/
+│   │   ├── lead_generation.py
+│   │   ├── lead_scoring.py
+│   │   └── web_scraper.py
+│   ├── static/
+│   │   └── index.html
 │   └── main.py
-├── tests/
 ├── .env
 ├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
-└── requirements.txt
+├── requirements.txt
+└── README.md
+```
+
+### Adding New Features
+
+1. Create new endpoints in `app/api/v1/endpoints/`
+2. Add services in `app/services/`
+3. Update the frontend in `app/static/index.html`
+4. Update tests and documentation
+
+## Testing
+
+Run tests with:
+```bash
+python -m pytest
 ```
 
 ## Contributing
 
 1. Fork the repository
-2. Create a new branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License - feel free to use this project for your own purposes.
+
+## Support
+
+For support, please open an issue in the GitHub repository.
 

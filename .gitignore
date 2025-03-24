@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -20,32 +19,74 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.env
-venv/
-.venv/
 
-# Logs
-logs/
-*.log
+# Virtual Environment
+venv/
+env/
+ENV/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
+.project
+.pydevproject
+.settings
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+log/
 
 # Testing
 .coverage
 htmlcov/
 .pytest_cache/
-.mypy_cache/
+.tox/
 
-# Docker
-.docker/
-docker-compose.override.yml
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
 
-# Project specific
-exports/
-temp/
-data/
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node (if using frontend build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Distribution
+dist/
+build/
+
+# Local development
+*.sqlite3
+*.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Coverage reports
+coverage/
+.coverage
+.coverage.*
+coverage.xml
+*.cover

@@ -1,6 +1,6 @@
-"""web scraping module specialized for property management leads."""
+"""Web scraping module specialized for property management leads."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 import aiohttp
 import asyncio
@@ -11,39 +11,51 @@ from ratelimit import limits, sleep_and_retry
 from dataclasses import dataclass
 from linkedin_api import Linkedin
 import re
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
+from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
 class Lead:
-    """data class for property management leads."""
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    position: Optional[str] = None
-    company: Optional[str] = None
+    """Data class for property management leads."""
+    name: str
+    title: str
+    company: str
+    location: str
     email: Optional[str] = None
     phone: Optional[str] = None
-    location: Optional[str] = None
+    linkedin_url: Optional[str] = None
     portfolio_size: Optional[int] = None
     property_types: Optional[List[str]] = None
     experience_years: Optional[int] = None
-    source: str = "unknown"
-    score: Optional[float] = None
-    analysis: Optional[Dict] = None
+    source: str = "web_scraper"
+    metadata: Optional[Dict] = None
 
 class WebScraper:
-    """web scraper specialized for property management leads."""
+    """Web scraper specialized for property management leads."""
 
-    def __init__(self, linkedin_username: Optional[str] = None, linkedin_password: Optional[str] = None):
-        """initialize the web scraper with necessary configurations."""
+    def __init__(self):
+        """Initialize the web scraper with necessary configurations."""
         self.user_agent = UserAgent()
         self.session = None
-        self.rate_limit = 100  # increased rate limit
-        self.max_retries = 5   # increased retries
+        self.rate_limit = 100
+        self.max_retries = 5
         self.linkedin_api = None
-        if linkedin_username and linkedin_password:
-            self.linkedin_api = Linkedin(linkedin_username, linkedin_password)
+        self.driver = None
+        
+        # Try to initialize LinkedIn API if credentials are available
+        if hasattr(settings, 'LINKEDIN_USERNAME') and hasattr(settings, 'LINKEDIN_PASSWORD'):
+            try:
+                self.linkedin_api = Linkedin(settings.LINKEDIN_USERNAME, settings.LINKEDIN_PASSWORD)
+                logger.info("LinkedIn API initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize LinkedIn API: {str(e)}")
         
         self.property_management_keywords = [
             'property manager',
@@ -69,8 +81,24 @@ class WebScraper:
             'facilities'
         ]
 
+    def setup_chrome_driver(self):
+        """Set up Chrome driver for web scraping when needed."""
+        if self.driver is None:
+            try:
+                chrome_options = Options()
+                chrome_options.add_argument("--headless")
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-dev-shm-usage")
+                
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                logger.info("Chrome driver initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize Chrome driver: {str(e)}")
+                raise
+
     async def __aenter__(self):
-        """setup async context."""
+        """Set up async context."""
         self.session = aiohttp.ClientSession(
             headers={'User-Agent': self.user_agent.random},
             timeout=aiohttp.ClientTimeout(total=30)
@@ -78,22 +106,129 @@ class WebScraper:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """cleanup async context."""
+        """Clean up async context."""
         if self.session:
             await self.session.close()
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
+
+    async def scrape_leads(self, keywords: List[str], location: Optional[str] = None, max_results: int = 10) -> List[Dict[str, Any]]:
+        """
+        Main method to scrape leads from various sources.
+        
+        Args:
+            keywords: List of keywords to search for
+            location: Optional location to filter by
+            max_results: Maximum number of leads to return
+            
+        Returns:
+            List of leads in standardized format
+        """
+        try:
+            async with self:
+                leads = []
+                
+                # Try LinkedIn first if available
+                if self.linkedin_api:
+                    linkedin_leads = await self.scrape_linkedin(
+                        query=' '.join(keywords),
+                        location=location,
+                        limit=max_results
+                    )
+                    leads.extend(self._convert_lead_to_dict(lead) for lead in linkedin_leads)
+                
+                # If we need more leads, try other sources
+                if len(leads) < max_results:
+                    remaining = max_results - len(leads)
+                    other_leads = await self.scrape_other_sources(keywords, location, remaining)
+                    leads.extend(other_leads)
+                
+                # Sort by completeness of profile and return top results
+                sorted_leads = sorted(
+                    leads,
+                    key=lambda x: self._calculate_profile_completeness(x),
+                    reverse=True
+                )
+                
+                return sorted_leads[:max_results]
+                
+        except Exception as e:
+            logger.error(f"Error scraping leads: {str(e)}")
+            return []
+
+    def _convert_lead_to_dict(self, lead: Lead) -> Dict[str, Any]:
+        """Convert Lead object to dictionary format."""
+        return {
+            'name': lead.name,
+            'title': lead.title,
+            'company': lead.company,
+            'location': lead.location,
+            'email': lead.email,
+            'phone': lead.phone,
+            'linkedin_url': lead.linkedin_url,
+            'metadata': {
+                'portfolio_size': lead.portfolio_size,
+                'property_types': lead.property_types,
+                'experience_years': lead.experience_years,
+                'source': lead.source,
+                **({} if lead.metadata is None else lead.metadata)
+            }
+        }
+
+    def _calculate_profile_completeness(self, lead: Dict[str, Any]) -> float:
+        """Calculate a score for profile completeness."""
+        score = 0.0
+        required_fields = ['name', 'title', 'company', 'location']
+        optional_fields = ['email', 'phone', 'linkedin_url']
+        
+        # Required fields contribute 60% of the score
+        for field in required_fields:
+            if lead.get(field):
+                score += 0.6 / len(required_fields)
+        
+        # Optional fields contribute 40% of the score
+        for field in optional_fields:
+            if lead.get(field):
+                score += 0.4 / len(optional_fields)
+        
+        # Metadata can boost the score by up to 20%
+        metadata = lead.get('metadata', {})
+        if metadata.get('portfolio_size'):
+            score *= 1.1
+        if metadata.get('property_types'):
+            score *= 1.05
+        if metadata.get('experience_years'):
+            score *= 1.05
+            
+        return min(score, 1.0)  # Cap at 1.0
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     @sleep_and_retry
     @limits(calls=100, period=60)
     async def fetch_page(self, url: str) -> str:
-        """fetch webpage content with improved rate limiting and retries."""
+        """Fetch webpage content with improved rate limiting and retries."""
         try:
             async with self.session.get(url) as response:
                 response.raise_for_status()
                 return await response.text()
         except Exception as e:
-            logger.error(f"error fetching page {url}: {str(e)}")
+            logger.error(f"Error fetching page {url}: {str(e)}")
             raise
+
+    async def scrape_other_sources(self, keywords: List[str], location: Optional[str], limit: int) -> List[Dict[str, Any]]:
+        """Scrape leads from other sources when LinkedIn is unavailable or insufficient."""
+        # Implementation for other sources would go here
+        # For now, return an empty list
+        return []
+
+    async def close(self):
+        """Clean up resources."""
+        if self.session:
+            await self.session.close()
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
 
     async def scrape_linkedin(self, query: str, location: Optional[str] = None, limit: int = 50) -> List[Lead]:
         """scrape property management leads from linkedin with enhanced filtering."""
@@ -126,9 +261,8 @@ class WebScraper:
                 portfolio_info = self._extract_portfolio_info(profile)
                 
                 lead = Lead(
-                    first_name=profile.get('first_name'),
-                    last_name=profile.get('last_name'),
-                    position=profile.get('headline'),
+                    name=profile.get('first_name') + ' ' + profile.get('last_name'),
+                    title=profile.get('headline'),
                     company=profile.get('company'),
                     location=profile.get('location'),
                     experience_years=experience_years,
@@ -222,11 +356,11 @@ class WebScraper:
 
     def _meets_quality_threshold(self, lead: Lead) -> bool:
         """determine if a lead meets our quality standards."""
-        if not lead.position or not lead.company:
+        if not lead.title or not lead.company:
             return False
             
         # Must be in property management
-        if not any(keyword in lead.position.lower() for keyword in self.property_management_keywords):
+        if not any(keyword in lead.title.lower() for keyword in self.property_management_keywords):
             return False
             
         # Prefer experienced professionals
@@ -237,30 +371,4 @@ class WebScraper:
         if lead.portfolio_size and lead.portfolio_size < 10:
             return False
             
-        return True
-
-    async def scrape_sources(self, sources: List[str], query: str, location: Optional[str] = None, limit: int = 50) -> List[Lead]:
-        """scrape leads from multiple sources with enhanced filtering."""
-        all_leads = []
-        tasks = []
-        
-        for source in sources:
-            if source.lower() == 'linkedin':
-                task = self.scrape_linkedin(query, location, limit)
-                tasks.append(task)
-            else:
-                # Add other specialized property management sources here
-                pass
-        
-        if tasks:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for result in results:
-                if isinstance(result, list):
-                    all_leads.extend(result)
-                else:
-                    logger.error(f"error in scraping task: {str(result)}")
-
-        # Sort leads by portfolio size and experience
-        all_leads.sort(key=lambda x: (x.portfolio_size or 0, x.experience_years or 0), reverse=True)
-        
-        return all_leads[:limit] if limit else all_leads 
+        return True 
