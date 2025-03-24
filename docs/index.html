@@ -13,59 +13,128 @@
             background-color: #FF6B35;
             color: white;
             transition: all 0.3s ease;
+            padding: 12px 32px;
+            border-radius: 6px;
+            font-weight: 600;
         }
         .btn-primary:hover {
             background-color: #E85A2C;
         }
+        .hero-section {
+            background-color: #FAFAFA;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-illustration {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background-image: url('path-to-your-illustration.svg');
+            background-repeat: no-repeat;
+            background-position: center right;
+            opacity: 0.1;
+        }
     </style>
 </head>
 <body class="bg-white">
-    <div class="container mx-auto px-4 py-12">
-        <h1 class="text-5xl font-bold mb-8 text-center text-gray-800">
-            Get The <span class="highlight">Leads</span> You Deserve
-        </h1>
-        <p class="text-xl text-center text-gray-600 mb-12">
-            High-quality decision makers, ready to engage
-        </p>
-        
-        <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-8 mb-12">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Find Your Perfect Leads</h2>
-            <form id="searchForm" class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 mb-2">Target Role (be specific)</label>
-                    <input type="text" id="keywords" class="w-full p-2 border rounded" 
-                           placeholder="VP of Operations, Chief Financial Officer">
+    <div class="hero-section">
+        <div class="hero-illustration"></div>
+        <div class="container mx-auto px-4">
+            <h1 class="text-5xl font-bold mb-6 text-center text-gray-800">
+                Get The <span class="highlight">Leads</span> You Need
+            </h1>
+            <p class="text-xl text-center text-gray-600 mb-12">
+                Connect with property managers who are ready to scale
+            </p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 -mt-16">
+        <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-xl p-8 mb-12">
+            <h2 class="text-2xl font-semibold mb-8 text-gray-800">Find Property Manager Leads</h2>
+            <form id="searchForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">Properties Under Management</label>
+                        <select id="companySize" class="w-full p-3 border rounded-lg bg-white">
+                            <option value="1-7">1-7 properties</option>
+                            <option value="8-15">8-15 properties</option>
+                            <option value="15-24">15-24 properties</option>
+                            <option value="25+">25+ properties</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">Target City</label>
+                        <input type="text" id="city" class="w-full p-3 border rounded-lg" 
+                               placeholder="e.g., San Francisco">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">State Focus</label>
+                        <select id="state" class="w-full p-3 border rounded-lg bg-white">
+                            <option value="">Select State</option>
+                            <option value="CA">California</option>
+                            <option value="NY">New York</option>
+                            <option value="TX">Texas</option>
+                            <option value="FL">Florida</option>
+                            <option value="all">All States</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">Lead Count</label>
+                        <input type="number" id="leadCount" class="w-full p-3 border rounded-lg" 
+                               value="25" min="1" max="100">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-gray-700 mb-2">Company Size</label>
-                    <select id="companySize" class="w-full p-2 border rounded">
-                        <option value="501-1000">501-1000 employees</option>
-                        <option value="1001-5000">1001-5000 employees</option>
-                        <option value="5001+">5001+ employees</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-700 mb-2">Decision Maker Level</label>
-                    <select id="decisionLevel" class="w-full p-2 border rounded">
-                        <option value="C-Level">C-Level Executives</option>
-                        <option value="VP">Vice Presidents</option>
-                        <option value="Director">Directors</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-700 mb-2">Location (Top Markets)</label>
-                    <select id="location" class="w-full p-2 border rounded">
-                        <option value="New York">New York</option>
-                        <option value="San Francisco">San Francisco</option>
-                        <option value="Los Angeles">Los Angeles</option>
-                        <option value="Chicago">Chicago</option>
-                        <option value="Boston">Boston</option>
-                    </select>
+                
+                <div class="text-center mt-8">
+                    <button type="submit" class="btn-primary">
+                        Generate Leads
+                    </button>
                 </div>
             </form>
         </div>
 
-        <div id="results" class="max-w-5xl mx-auto bg-white rounded-lg shadow-xl p-8 hidden">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold mb-4">Companies <span class="highlight">Trust</span> Our Leads</h2>
+            <div class="flex justify-center space-x-8 opacity-75">
+                <!-- Add your company logos here -->
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+            <div class="text-center p-6">
+                <div class="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Verified Contacts</h3>
+                <p class="text-gray-600">Real property managers with direct contact information</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">High Response Rate</h3>
+                <p class="text-gray-600">Leads that are actively looking to scale their business</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Quality Guaranteed</h3>
+                <p class="text-gray-600">Every lead is manually verified for accuracy</p>
+            </div>
+        </div>
+
+        <div id="results" class="max-w-5xl mx-auto bg-white rounded-xl shadow-xl p-8 hidden">
         </div>
     </div>
 </body>
