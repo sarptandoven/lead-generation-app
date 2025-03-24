@@ -19,6 +19,12 @@ import FadeInSection from '../components/FadeInSection';
 import DataSourceSelector from '../components/DataSourceSelector';
 import DataSourceConfig from '../components/DataSourceConfig';
 import { DataSourceProvider, useDataSources } from '../contexts/DataSourceContext';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import BusinessIcon from '@mui/icons-material/Business';
+import SearchIcon from '@mui/icons-material/Search';
+import ContactPageIcon from '@mui/icons-material/ContactPage';
+import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
+import WorkIcon from '@mui/icons-material/Work';
 
 // Custom styled components
 const HeroSection = styled(Box)(({ theme }) => ({
@@ -96,6 +102,45 @@ const LandingPageContent: React.FC = () => {
       avatar: '/avatars/avatar2.jpg',
       comment: 'Incredibly intuitive and powerful. A game-changer for our team.',
       rating: 5,
+    },
+  ];
+
+  const dataSources = [
+    {
+      id: 'linkedin',
+      title: 'LinkedIn',
+      description: 'Find leads from professional networks',
+      icon: LinkedInIcon,
+    },
+    {
+      id: 'google',
+      title: 'Google My Business',
+      description: 'Discover local businesses and contacts',
+      icon: BusinessIcon,
+    },
+    {
+      id: 'bing',
+      title: 'Bing Places',
+      description: 'Access business listings and contact information',
+      icon: SearchIcon,
+    },
+    {
+      id: 'yellow-pages',
+      title: 'Yellow Pages',
+      description: 'Search business directories for leads',
+      icon: ContactPageIcon,
+    },
+    {
+      id: 'crunchbase',
+      title: 'Crunchbase',
+      description: 'Get data on companies and key personnel',
+      icon: BusinessCenterIcon,
+    },
+    {
+      id: 'role-based',
+      title: 'Role/Job Title',
+      description: 'Filter leads by specific roles and titles',
+      icon: WorkIcon,
     },
   ];
 

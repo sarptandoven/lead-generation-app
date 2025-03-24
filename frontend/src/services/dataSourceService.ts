@@ -7,6 +7,7 @@ export interface LeadSearchParams {
   companySize?: string[];
   founded?: string;
   revenue?: string;
+  roles?: string[];
   page?: number;
   limit?: number;
 }
@@ -25,6 +26,7 @@ export interface Lead {
   contacts?: Contact[];
   lastUpdated: string;
   confidence: number;
+  roles?: string[];
 }
 
 interface Contact {
@@ -33,6 +35,14 @@ interface Contact {
   email?: string;
   phone?: string;
   linkedin?: string;
+  role?: string;
+}
+
+export interface RoleCategory {
+  id: string;
+  name: string;
+  roles: string[];
+  description: string;
 }
 
 class DataSourceService {
@@ -123,6 +133,55 @@ class DataSourceService {
 
     if (!response.ok) {
       throw new Error(`Failed to get source filters: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async getRoleCategories(): Promise<RoleCategory[]> {
+    const response = await fetch(`${this.apiBaseUrl}/api/roles/categories`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get role categories: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async searchRoles(query: string): Promise<string[]> {
+    const response = await fetch(`${this.apiBaseUrl}/api/roles/search?q=${encodeURIComponent(query)}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to search roles: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async getPopularRoles(): Promise<string[]> {
+    const response = await fetch(`${this.apiBaseUrl}/api/roles/popular`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get popular roles: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async getRoleStats(roles: string[]): Promise<{
+    totalLeads: number;
+    averageSeniority: string;
+    topIndustries: { industry: string; count: number }[];
+    roleDistribution: { role: string; percentage: number }[];
+  }> {
+    const queryParams = new URLSearchParams({
+      roles: roles.join(','),
+    });
+
+    const response = await fetch(`${this.apiBaseUrl}/api/roles/stats?${queryParams}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get role stats: ${response.statusText}`);
     }
 
     return response.json();

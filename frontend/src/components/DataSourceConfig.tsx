@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useDataSources } from '../contexts/DataSourceContext';
 import { dataSourceService } from '../services/dataSourceService';
+import RoleSourceConfig from './RoleSourceConfig';
 
 interface DataSourceConfigProps {
   sourceId: string;
@@ -54,6 +55,10 @@ const sourceRequirements = {
       apiKey: 'API Key',
       userKey: 'User Key',
     },
+  },
+  'role-based': {
+    steps: ['Role Selection', 'Filters'],
+    fields: {},
   },
 };
 
@@ -120,6 +125,10 @@ const DataSourceConfig: React.FC<DataSourceConfigProps> = ({ sourceId, onConfigu
   };
 
   const renderStepContent = (step: number) => {
+    if (sourceId === 'role-based') {
+      return <RoleSourceConfig onConfigured={onConfigured} />;
+    }
+
     switch (step) {
       case 0:
         return (

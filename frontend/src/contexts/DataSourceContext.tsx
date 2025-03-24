@@ -22,6 +22,7 @@ export interface SourceConfig {
     companySize?: string[];
     founded?: string;
     revenue?: string;
+    roles?: string[];
   };
   rateLimit?: {
     requestsPerMinute: number;
@@ -66,6 +67,16 @@ const defaultSourceConfigs: Record<string, SourceConfig> = {
     rateLimit: {
       requestsPerMinute: 50,
       maxRequests: 500,
+    },
+  },
+  'role-based': {
+    status: 'unconfigured',
+    rateLimit: {
+      requestsPerMinute: 200,
+      maxRequests: 2000,
+    },
+    filters: {
+      roles: [],
     },
   },
 };
