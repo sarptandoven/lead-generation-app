@@ -135,6 +135,20 @@ const dataSources: DataSource[] = [
     avgResponseTime: '3-4s',
     status: 'active',
   },
+  {
+    id: 'role-based',
+    title: 'Role/Job Title',
+    description: 'Filter leads by specific roles and job titles',
+    icon: '👥',
+    capabilities: [
+      'Role filtering',
+      'Title matching',
+      'Seniority levels',
+      'Department targeting'
+    ],
+    avgResponseTime: '1-2s',
+    status: 'active',
+  },
 ];
 
 const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
@@ -159,6 +173,7 @@ const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
           onClick={() => handleSourceToggle(source.id)}
         >
           <StatusChip
+            theme={theme}
             status={source.status}
             label={source.status === 'active' 
               ? 'Active' 
