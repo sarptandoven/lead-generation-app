@@ -17,6 +17,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from app.core.config import settings
+from playwright.async_api import async_playwright
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -372,3 +373,216 @@ class WebScraper:
             return False
             
         return True 
+
+class WebScraperService:
+    def __init__(self):
+        self.browser = None
+        self.context = None
+    
+    async def setup(self):
+        """Initialize the browser."""
+        playwright = await async_playwright().start()
+        self.browser = await playwright.chromium.launch(headless=True)
+        self.context = await self.browser.new_context()
+
+    async def close(self):
+        """Clean up resources."""
+        if self.context:
+            await self.context.close()
+        if self.browser:
+            await self.browser.close()
+
+    async def find_property_managers(self, 
+                                   location: str, 
+                                   properties_range: str,
+                                   max_leads: int = 25) -> List[Dict]:
+        """Find property managers based on criteria."""
+        if not self.browser:
+            await self.setup()
+
+        leads = []
+        search_queries = [
+            f"property manager {location}",
+            f"residential property management company {location}",
+            f"apartment property manager {location}"
+        ]
+
+        for query in search_queries:
+            if len(leads) >= max_leads:
+                break
+
+            # Search Google
+            google_results = await self._search_google(query)
+            
+            # Search LinkedIn
+            linkedin_results = await self._search_linkedin(query)
+            
+            # Combine and deduplicate results
+            all_results = google_results + linkedin_results
+            unique_results = self._deduplicate_leads(all_results)
+            
+            # Filter by properties range
+            filtered_results = self._filter_by_properties(unique_results, properties_range)
+            
+            leads.extend(filtered_results)
+            
+            # Respect rate limits
+            await asyncio.sleep(2)
+
+        # Trim to max_leads
+        return leads[:max_leads]
+
+    async def _search_google(self, query: str) -> List[Dict]:
+        """Search Google for property management companies."""
+        page = await self.context.new_page()
+        results = []
+        
+        try:
+            # Search Google
+            await page.goto(f'https://www.google.com/search?q={query}')
+            await page.wait_for_load_state('networkidle')
+            
+            # Extract business listings and organic results
+            content = await page.content()
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Process Google Business listings
+            business_results = soup.find_all('div', class_='VkpGBb')
+            for result in business_results:
+                name = result.find('div', class_='dbg0pd')
+                if name:
+                    name = name.text.strip()
+                    website = self._extract_website(result)
+                    phone = self._extract_phone(result)
+                    
+                    results.append({
+                        'name': name,
+                        'company': name,
+                        'source': 'google',
+                        'website': website,
+                        'phone': phone,
+                        'location': self._extract_location(result)
+                    })
+            
+        except Exception as e:
+            logger.error(f"Error in Google search: {str(e)}")
+        finally:
+            await page.close()
+        
+        return results
+
+    async def _search_linkedin(self, query: str) -> List[Dict]:
+        """Search LinkedIn for property managers."""
+        page = await self.context.new_page()
+        results = []
+        
+        try:
+            # Search LinkedIn
+            await page.goto('https://www.linkedin.com/search/results/people/')
+            await page.fill('input[aria-label="Search"]', query)
+            await page.press('input[aria-label="Search"]', 'Enter')
+            await page.wait_for_load_state('networkidle')
+            
+            # Extract profiles
+            content = await page.content()
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            profiles = soup.find_all('li', class_='reusable-search__result-container')
+            for profile in profiles:
+                name = profile.find('span', class_='actor-name')
+                title = profile.find('div', class_='entity-result__primary-subtitle')
+                
+                if name and title:
+                    results.append({
+                        'name': name.text.strip(),
+                        'title': title.text.strip(),
+                        'source': 'linkedin',
+                        'linkedin_url': self._extract_linkedin_url(profile),
+                        'company': self._extract_company(profile)
+                    })
+                    
+        except Exception as e:
+            logger.error(f"Error in LinkedIn search: {str(e)}")
+        finally:
+            await page.close()
+            
+        return results
+
+    def _extract_website(self, element) -> Optional[str]:
+        """Extract website URL from Google result."""
+        website_elem = element.find('a', href=True)
+        return website_elem['href'] if website_elem else None
+
+    def _extract_phone(self, element) -> Optional[str]:
+        """Extract phone number from result."""
+        phone_pattern = r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+        text = element.get_text()
+        match = re.search(phone_pattern, text)
+        return match.group(0) if match else None
+
+    def _extract_location(self, element) -> Optional[str]:
+        """Extract location from result."""
+        location_elem = element.find('div', class_='address')
+        return location_elem.text.strip() if location_elem else None
+
+    def _extract_linkedin_url(self, element) -> Optional[str]:
+        """Extract LinkedIn profile URL."""
+        link = element.find('a', href=True)
+        return link['href'] if link else None
+
+    def _extract_company(self, element) -> Optional[str]:
+        """Extract company name from LinkedIn result."""
+        company_elem = element.find('div', class_='entity-result__secondary-subtitle')
+        return company_elem.text.strip() if company_elem else None
+
+    def _deduplicate_leads(self, leads: List[Dict]) -> List[Dict]:
+        """Remove duplicate leads based on name and company."""
+        seen = set()
+        unique_leads = []
+        
+        for lead in leads:
+            key = f"{lead.get('name', '')}-{lead.get('company', '')}"
+            if key not in seen:
+                seen.add(key)
+                unique_leads.append(lead)
+        
+        return unique_leads
+
+    def _filter_by_properties(self, leads: List[Dict], properties_range: str) -> List[Dict]:
+        """Filter leads by property count range."""
+        def parse_range(range_str: str) -> tuple:
+            if range_str == "1-7":
+                return (1, 7)
+            elif range_str == "8-15":
+                return (8, 15)
+            elif range_str == "15-24":
+                return (15, 24)
+            else:  # "25+"
+                return (25, float('inf'))
+        
+        min_props, max_props = parse_range(properties_range)
+        
+        filtered_leads = []
+        for lead in leads:
+            # Try to find property count in title or description
+            properties_count = self._estimate_properties_count(lead)
+            if min_props <= properties_count <= max_props:
+                lead['properties'] = properties_count
+                filtered_leads.append(lead)
+        
+        return filtered_leads
+
+    def _estimate_properties_count(self, lead: Dict) -> int:
+        """Estimate number of properties managed based on available information."""
+        # This is a simplified estimation - you might want to enhance this
+        title = lead.get('title', '').lower()
+        company = lead.get('company', '').lower()
+        
+        if 'small portfolio' in title or 'small portfolio' in company:
+            return 5
+        elif 'medium portfolio' in title or 'medium portfolio' in company:
+            return 15
+        elif 'large portfolio' in title or 'large portfolio' in company:
+            return 30
+        else:
+            return 10  # Default assumption 

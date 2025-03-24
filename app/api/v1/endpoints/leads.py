@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, conlist
 from app.services.lead_generation import LeadGenerationService
+from app.services.lead_scoring import LeadScore
 
 router = APIRouter()
 lead_service = LeadGenerationService()
@@ -25,142 +26,100 @@ class SearchCriteria(BaseModel):
             }
         }
 
-class LeadScore(BaseModel):
-    relevance: float = Field(..., ge=0, le=100)
-    engagement: float = Field(..., ge=0, le=100)
-    potential: float = Field(..., ge=0, le=100)
-    total: float = Field(..., ge=0, le=100)
+class LeadRequest(BaseModel):
+    location: str = Field(..., description="Target location for lead search")
+    properties_range: str = Field(
+        ..., 
+        description="Range of properties managed",
+        regex="^(1-7|8-15|15-24|25\+)$"
+    )
+    max_leads: Optional[int] = Field(
+        25, 
+        description="Maximum number of leads to return",
+        gt=0,
+        le=100
+    )
+    min_score: Optional[float] = Field(
+        0.7,
+        description="Minimum score threshold (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0
+    )
 
 class LeadResponse(BaseModel):
-    name: str = Field(..., description="Full name of the lead")
-    title: str = Field(..., description="Job title")
-    company: str = Field(..., description="Company name")
-    location: str = Field(..., description="Location")
-    email: Optional[str] = Field(None, description="Email address if available")
-    phone: Optional[str] = Field(None, description="Phone number if available")
-    linkedin_url: Optional[str] = Field(None, description="LinkedIn profile URL if available")
-    score: LeadScore = Field(..., description="Lead scoring metrics")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional lead information")
+    name: str
+    company: str
+    title: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    phone: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    properties: Optional[int] = None
+    source: str
+    score: LeadScore
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "John Smith",
-                "title": "Senior Property Manager",
-                "company": "ABC Properties",
-                "location": "New York, NY",
-                "email": "john.smith@abcproperties.com",
-                "phone": "+1-555-0123",
-                "linkedin_url": "https://linkedin.com/in/johnsmith",
-                "score": {
-                    "relevance": 85,
-                    "engagement": 75,
-                    "potential": 90,
-                    "total": 83
-                },
-                "metadata": {
-                    "portfolio_size": 150,
-                    "property_types": ["residential", "commercial"],
-                    "experience_years": 8
-                }
-            }
-        }
+class LeadAnalysisRequest(BaseModel):
+    leads: List[dict] = Field(..., description="List of leads to analyze")
 
 class LeadAnalysis(BaseModel):
     analysis: str = Field(..., description="Detailed analysis of the leads")
     timestamp: str = Field(..., description="Timestamp of the analysis")
 
-@router.post("/generate", response_model=List[LeadResponse], tags=["leads"])
-async def generate_leads(
-    criteria: SearchCriteria,
-    include_analysis: bool = Query(False, description="Whether to include lead analysis in response")
-) -> List[LeadResponse]:
+@router.post("/generate", response_model=List[LeadResponse])
+async def generate_leads(request: LeadRequest):
     """
-    Generate leads based on search criteria.
-    
-    - Searches for property management professionals matching the specified criteria
-    - Scores and ranks leads based on relevance, engagement, and potential
-    - Optionally includes detailed analysis of the lead set
+    Generate and score property manager leads based on location and criteria.
     """
     try:
-        search_params = criteria.dict()
-        max_leads = search_params.pop('max_leads')
-        
         leads = await lead_service.generate_leads(
-            search_criteria=search_params,
-            max_leads=max_leads
+            location=request.location,
+            properties_range=request.properties_range,
+            max_leads=request.max_leads,
+            min_score=request.min_score
         )
-        
-        if include_analysis and leads:
-            analysis = await lead_service.analyze_leads(leads)
-            for lead in leads:
-                lead['metadata']['analysis'] = analysis
-        
         return leads
+        
     except Exception as e:
-        logger.error(f"Failed to generate leads: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate leads: {str(e)}"
+            detail=f"Error generating leads: {str(e)}"
         )
 
-@router.post("/analyze", response_model=LeadAnalysis, tags=["leads"])
-async def analyze_leads(leads: List[LeadResponse]) -> LeadAnalysis:
+@router.post("/analyze", response_model=List[LeadResponse])
+async def analyze_leads(request: LeadAnalysisRequest):
     """
-    Analyze a batch of leads to provide insights.
-    
-    - Evaluates the overall quality of the lead set
-    - Identifies common patterns and trends
-    - Suggests prioritization strategies
-    - Recommends engagement approaches
+    Analyze and score a list of existing leads.
     """
     try:
-        return await lead_service.analyze_leads(leads)
+        analyzed_leads = await lead_service.analyze_leads(request.leads)
+        return analyzed_leads
+        
     except Exception as e:
-        logger.error(f"Failed to analyze leads: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to analyze leads: {str(e)}"
+            detail=f"Error analyzing leads: {str(e)}"
         )
 
-@router.get("/export", tags=["leads"])
+@router.get("/export")
 async def export_leads(
-    format: str = Query('csv', regex='^csv$', description="Export format (currently only CSV is supported)"),
-    max_leads: int = Query(100, ge=1, le=1000, description="Maximum number of leads to export")
-) -> Response:
+    leads: List[dict] = Query(...),
+    format: str = Query("csv", regex="^(csv|xlsx)$")
+):
     """
-    Export leads to CSV format.
-    
-    - Retrieves leads using default search criteria
-    - Formats the data for export
-    - Returns a downloadable file
+    Export leads to CSV or Excel format.
     """
     try:
-        # Get leads with default criteria
-        leads = await lead_service.generate_leads({}, max_leads=max_leads)
-        
-        # Export leads
-        export_data = await lead_service.export_leads(leads, format=format)
-        
-        # Return the exported data as a downloadable file
-        headers = {
-            'Content-Disposition': f'attachment; filename="leads.{format}"',
-            'Content-Type': 'text/csv'
-        }
-        
+        file_data = await lead_service.export_leads(leads, format)
         return Response(
-            content=export_data,
-            media_type='text/csv',
-            headers=headers
+            content=file_data,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f"attachment; filename=leads.{format}"
+            }
         )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        )
+        
     except Exception as e:
-        logger.error(f"Failed to export leads: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to export leads: {str(e)}"
+            detail=f"Error exporting leads: {str(e)}"
         ) 

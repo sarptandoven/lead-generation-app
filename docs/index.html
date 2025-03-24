@@ -6,6 +6,10 @@
     <title>Lead Generation Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
+        body {
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
         .highlight {
             color: #FF6B35;
         }
@@ -13,12 +17,14 @@
             background-color: #FF6B35;
             color: white;
             transition: all 0.3s ease;
-            padding: 12px 32px;
-            border-radius: 6px;
+            padding: 16px 32px;
+            border-radius: 8px;
             font-weight: 600;
         }
         .btn-primary:hover {
             background-color: #E85A2C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .hero-section {
             background-color: #FAFAFA;
@@ -59,7 +65,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-gray-700 mb-2 font-medium">Properties Under Management</label>
-                        <select id="companySize" class="w-full p-3 border rounded-lg bg-white">
+                        <select id="companySize" class="w-full p-3 border rounded-lg bg-white" required>
                             <option value="1-7">1-7 properties</option>
                             <option value="8-15">8-15 properties</option>
                             <option value="15-24">15-24 properties</option>
@@ -69,11 +75,11 @@
                     <div>
                         <label class="block text-gray-700 mb-2 font-medium">Target City</label>
                         <input type="text" id="city" class="w-full p-3 border rounded-lg" 
-                               placeholder="e.g., San Francisco">
+                               placeholder="e.g., San Francisco" required>
                     </div>
                     <div>
                         <label class="block text-gray-700 mb-2 font-medium">State Focus</label>
-                        <select id="state" class="w-full p-3 border rounded-lg bg-white">
+                        <select id="state" class="w-full p-3 border rounded-lg bg-white" required>
                             <option value="">Select State</option>
                             <option value="CA">California</option>
                             <option value="NY">New York</option>
@@ -85,7 +91,7 @@
                     <div>
                         <label class="block text-gray-700 mb-2 font-medium">Lead Count</label>
                         <input type="number" id="leadCount" class="w-full p-3 border rounded-lg" 
-                               value="25" min="1" max="100">
+                               value="25" min="1" max="100" required>
                     </div>
                 </div>
                 
@@ -137,5 +143,48 @@
         <div id="results" class="max-w-5xl mx-auto bg-white rounded-xl shadow-xl p-8 hidden">
         </div>
     </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000/api/v1' 
+            : 'https://your-backend-api-url.com/api/v1';
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = 'Generating...';
+
+            try {
+                const formData = {
+                    properties_range: document.getElementById('companySize').value,
+                    city: document.getElementById('city').value,
+                    state: document.getElementById('state').value,
+                    lead_count: parseInt(document.getElementById('leadCount').value)
+                };
+
+                const response = await fetch(`${API_BASE_URL}/leads/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) throw new Error('Failed to generate leads');
+                
+                const leads = await response.json();
+                localStorage.setItem('generatedLeads', JSON.stringify(leads));
+                
+                // Fade out transition
+                document.body.style.opacity = 0;
+                setTimeout(() => {
+                    window.location.href = 'select-format.html';
+                }, 500);
+            } catch (error) {
+                alert('Error generating leads: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = 'Generate Leads';
+            }
+        });
+    </script>
 </body>
 </html> 

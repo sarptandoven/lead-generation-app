@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Format</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .highlight {
+            color: #FF6B35;
+        }
+        .format-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .format-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.1);
+        }
+        .icon-circle {
+            background-color: rgba(255, 107, 53, 0.1);
+            color: #FF6B35;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-16">
+        <h1 class="text-4xl font-bold mb-4 text-center text-gray-800">
+            Choose Your <span class="highlight">Format</span>
+        </h1>
+        <p class="text-xl text-center text-gray-600 mb-12">
+            Select how you'd like to view your leads
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div class="format-card bg-white p-8 rounded-xl shadow-lg text-center" onclick="selectFormat('preview')">
+                <div class="icon-circle">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-4">Preview Online</h3>
+                <p class="text-gray-600">View and copy leads directly in your browser</p>
+            </div>
+
+            <div class="format-card bg-white p-8 rounded-xl shadow-lg text-center" onclick="selectFormat('csv')">
+                <div class="icon-circle">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-4">Download CSV</h3>
+                <p class="text-gray-600">Export as CSV for spreadsheet software</p>
+            </div>
+
+            <div class="format-card bg-white p-8 rounded-xl shadow-lg text-center" onclick="selectFormat('excel')">
+                <div class="icon-circle">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-4">Download Excel</h3>
+                <p class="text-gray-600">Export as formatted Excel workbook</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fade in on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = 1;
+        });
+
+        function selectFormat(format) {
+            // Store selected format
+            localStorage.setItem('selectedFormat', format);
+            
+            // Fade out
+            document.body.style.opacity = 0;
+            
+            // Redirect to results page
+            setTimeout(() => {
+                window.location.href = 'results.html';
+            }, 500);
+        }
+    </script>
+</body>
+</html> 

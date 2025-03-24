@@ -5,141 +5,114 @@ from datetime import datetime
 from openai import OpenAI
 from app.core.config import settings
 
-from app.services.web_scraper import WebScraper
+from app.services.web_scraper import WebScraperService
 from app.services.lead_scoring import LeadScoringService, LeadScore
 
 logger = logging.getLogger(__name__)
 
 class LeadGenerationService:
     def __init__(self):
-        self.web_scraper = WebScraper()
+        self.web_scraper = WebScraperService()
         self.lead_scorer = LeadScoringService()
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-    async def generate_leads(self, search_criteria: Dict[str, Any], max_leads: int = 10) -> List[Dict[str, Any]]:
+    async def generate_leads(self, 
+                           location: str,
+                           properties_range: str,
+                           max_leads: int = 25,
+                           min_score: float = 0.7) -> List[Dict]:
         """
-        Generate leads based on search criteria using web scraping and lead scoring.
+        Generate and score leads based on location and property range criteria.
+        
+        Args:
+            location: Target location for lead search
+            properties_range: Range of properties ("1-7", "8-15", "15-24", "25+")
+            max_leads: Maximum number of leads to return
+            min_score: Minimum score threshold for leads (0.0 to 1.0)
+            
+        Returns:
+            List of scored leads sorted by score
         """
         try:
-            # Scrape raw lead data
-            raw_leads = await self.web_scraper.scrape_leads(
-                keywords=search_criteria.get('keywords', []),
-                location=search_criteria.get('location'),
-                max_results=max_leads
+            # Find potential leads through web scraping
+            raw_leads = await self.web_scraper.find_property_managers(
+                location=location,
+                properties_range=properties_range,
+                max_leads=max_leads
             )
             
-            # Process and score the leads
-            processed_leads = await self._process_leads(raw_leads)
+            logger.info(f"Found {len(raw_leads)} potential leads")
             
-            # Sort leads by total score in descending order
-            sorted_leads = sorted(
-                processed_leads,
-                key=lambda x: x.get('score', {}).get('total', 0),
-                reverse=True
-            )
+            # Score leads in parallel
+            scored_leads = await self._score_leads_parallel(raw_leads)
             
-            return sorted_leads[:max_leads]
+            # Filter by minimum score and sort by score
+            qualified_leads = [
+                lead for lead in scored_leads 
+                if lead['score'].total_score >= min_score
+            ]
+            qualified_leads.sort(key=lambda x: x['score'].total_score, reverse=True)
+            
+            logger.info(f"Found {len(qualified_leads)} qualified leads")
+            
+            return qualified_leads[:max_leads]
             
         except Exception as e:
             logger.error(f"Error generating leads: {str(e)}")
-            return []
+            raise
+        finally:
+            # Clean up resources
+            await self.web_scraper.close()
 
-    async def _process_leads(self, raw_leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def analyze_leads(self, leads: List[Dict]) -> List[Dict]:
         """
-        Process and score multiple leads concurrently.
-        """
-        tasks = []
-        for lead in raw_leads:
-            tasks.append(self._process_single_lead(lead))
-            
-        # Process leads concurrently
-        processed_leads = await asyncio.gather(*tasks)
+        Analyze and score a list of existing leads.
         
-        # Filter out None values (failed processing)
-        return [lead for lead in processed_leads if lead is not None]
-
-    async def _process_single_lead(self, lead_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        Process and score a single lead.
-        """
-        try:
-            # Score the lead
-            score = await self.lead_scorer.score_lead(lead_data)
+        Args:
+            leads: List of lead dictionaries with contact info
             
-            # Enrich lead data with score and metadata
-            enriched_lead = {
-                **lead_data,
-                'score': {
-                    'relevance': round(score.relevance * 100, 2),
-                    'engagement': round(score.engagement * 100, 2),
-                    'potential': round(score.potential * 100, 2),
-                    'total': round(score.total * 100, 2)
-                },
-                'metadata': {
-                    'processed_at': datetime.utcnow().isoformat(),
-                    'source': lead_data.get('source', 'web_scraper')
-                }
-            }
-            
-            return enriched_lead
-            
-        except Exception as e:
-            logger.error(f"Error processing lead: {str(e)}")
-            return None
-
-    async def analyze_leads(self, leads: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Analyze a batch of leads using GPT to provide insights.
+        Returns:
+            List of leads with scores and analysis
         """
         try:
-            prompt = self._create_analysis_prompt(leads)
-            response = await self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a lead analysis expert specializing in property management professionals."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            
-            return {
-                'analysis': response.choices[0].message.content,
-                'timestamp': datetime.utcnow().isoformat()
-            }
+            scored_leads = await self._score_leads_parallel(leads)
+            scored_leads.sort(key=lambda x: x['score'].total_score, reverse=True)
+            return scored_leads
             
         except Exception as e:
             logger.error(f"Error analyzing leads: {str(e)}")
-            return {
-                'analysis': "Error analyzing leads",
-                'timestamp': datetime.utcnow().isoformat()
-            }
+            raise
 
-    def _create_analysis_prompt(self, leads: List[Dict[str, Any]]) -> str:
-        """
-        Create a prompt for batch lead analysis.
-        """
-        prompt_parts = [
-            f"Analyze the following {len(leads)} property management leads:\n"
-        ]
+    async def _score_leads_parallel(self, leads: List[Dict]) -> List[Dict]:
+        """Score multiple leads in parallel."""
+        scoring_tasks = []
         
-        for i, lead in enumerate(leads, 1):
-            prompt_parts.extend([
-                f"\nLead {i}:",
-                f"Name: {lead.get('name', 'N/A')}",
-                f"Title: {lead.get('title', 'N/A')}",
-                f"Company: {lead.get('company', 'N/A')}",
-                f"Location: {lead.get('location', 'N/A')}",
-                f"Score: {lead.get('score', {}).get('total', 0)}/100"
-            ])
+        for lead in leads:
+            task = asyncio.create_task(self._score_lead(lead))
+            scoring_tasks.append(task)
+            
+        scored_leads = await asyncio.gather(*scoring_tasks)
+        return scored_leads
         
-        prompt_parts.extend([
-            "\nProvide insights on:",
-            "1. Overall quality of the lead set",
-            "2. Common patterns or trends",
-            "3. Recommended prioritization strategy",
-            "4. Potential engagement approaches"
-        ])
-        
-        return "\n".join(prompt_parts)
+    async def _score_lead(self, lead: Dict) -> Dict:
+        """Score a single lead and add the score to the lead dict."""
+        try:
+            score = await self.lead_scorer.score_lead(lead)
+            lead['score'] = score
+            return lead
+            
+        except Exception as e:
+            logger.error(f"Error scoring lead {lead.get('name')}: {str(e)}")
+            # Return lead with minimum score on error
+            lead['score'] = LeadScore(
+                total_score=0.0,
+                property_fit=0.0,
+                decision_maker=0.0,
+                location_value=0.0,
+                response_likelihood=0.0,
+                notes="Error during scoring"
+            )
+            return lead
 
     async def export_leads(self, leads: List[Dict[str, Any]], format: str = 'csv') -> bytes:
         """
