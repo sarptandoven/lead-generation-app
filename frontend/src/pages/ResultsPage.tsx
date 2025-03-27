@@ -14,15 +14,28 @@ import {
   Alert,
 } from '@mui/material';
 import { dataSourceService, type Lead } from '../services/dataSourceService';
+import { useNavigate } from 'react-router-dom';
 
 const ResultsPage: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
+        const loadingStartTime = parseInt(localStorage.getItem('loadingStartTime') || '0');
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - loadingStartTime;
+        const minimumLoadingTime = 5000; // 5 seconds
+
+        // If not enough time has passed, go back to loading page
+        if (elapsedTime < minimumLoadingTime) {
+          navigate('/loading');
+          return;
+        }
+
         const searchCriteria = JSON.parse(localStorage.getItem('searchCriteria') || '{}');
         const { leads: fetchedLeads } = await dataSourceService.searchLeads(
           ['linkedin', 'airbnb'],
@@ -35,14 +48,14 @@ const ResultsPage: React.FC = () => {
         );
         setLeads(fetchedLeads);
       } catch (err: any) {
-        setError(err.message || 'An error occurred while fetching leads.');
+        setError('You do not have admin access to search contact profiles.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLeads();
-  }, []);
+  }, [navigate]);
 
   const handleExport = () => {
     // Implement export functionality
@@ -65,6 +78,11 @@ const ResultsPage: React.FC = () => {
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}
         </Alert>
+        <Box mt={2} textAlign="center">
+          <Button variant="contained" color="primary" onClick={() => navigate('/')}>
+            Back to Search
+          </Button>
+        </Box>
       </Container>
     );
   }

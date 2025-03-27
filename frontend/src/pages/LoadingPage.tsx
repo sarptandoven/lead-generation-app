@@ -20,6 +20,9 @@ const LoadingPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Store the start time in localStorage
+    localStorage.setItem('loadingStartTime', Date.now().toString());
+
     const interval = setInterval(() => {
       setCurrentPhraseIndex((prevIndex) => (prevIndex + 1) % rotatingPhrases.length);
       setProgress((prevProgress) => Math.min(prevProgress + 5, 95));
