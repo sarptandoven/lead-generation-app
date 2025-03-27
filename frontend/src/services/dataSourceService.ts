@@ -23,20 +23,13 @@ export interface LeadSearchParams {
 }
 
 export interface Lead {
-  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  location: string;
   source: string;
-  companyName: string;
-  industry?: string;
-  location?: string;
-  size?: string;
-  revenue?: string;
-  founded?: string;
-  description?: string;
-  website?: string;
-  contacts?: Contact[];
-  lastUpdated: string;
-  confidence: number;
-  roles?: string[];
+  qualityScore: number;
 }
 
 export interface Contact {
@@ -95,7 +88,10 @@ class DataSourceService {
 
       const response = await apiClient.get(`/leads/search?${queryParams}`);
       return response.data as { leads: Lead[]; total: number };
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        throw new Error('You do not have admin access to search contact profiles.');
+      }
       console.error('Error searching leads:', error);
       throw error;
     }

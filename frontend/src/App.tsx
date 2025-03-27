@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container } from '@mui/material';
+import LandingPage from './pages/LandingPage';
+import LoadingPage from './pages/LoadingPage';
+import ResultsPage from './pages/ResultsPage';
 
 // Components
 import Navbar from './components/Navbar';
@@ -52,7 +55,7 @@ const theme = createTheme({
   },
 });
 
-function App() {
+const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -61,7 +64,10 @@ function App() {
           <Navbar />
           <Container component="main" sx={{ mt: 4, mb: 4, flex: 1 }}>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/loading" element={<LoadingPage />} />
+              <Route path="/results" element={<ResultsPage />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/generate" element={<LeadGeneration />} />
               <Route path="/leads" element={<LeadManagement />} />
               <Route path="/settings" element={<Settings />} />
@@ -72,6 +78,6 @@ function App() {
       </Router>
     </ThemeProvider>
   );
-}
+};
 
 export default App; 

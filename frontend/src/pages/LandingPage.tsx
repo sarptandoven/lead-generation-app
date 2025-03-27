@@ -11,6 +11,7 @@ import {
   InputLabel,
   styled,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import TrustedCompanies from '../components/TrustedCompanies';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -44,10 +45,19 @@ const LandingPage = () => {
   const [targetCity, setTargetCity] = useState('');
   const [state, setState] = useState('');
   const [leadCount, setLeadCount] = useState('25');
+  const navigate = useNavigate();
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    // Handle form submission
+    // Store search criteria in localStorage
+    localStorage.setItem('searchCriteria', JSON.stringify({
+      propertyCount,
+      targetCity,
+      state,
+      leadCount
+    }));
+    // Navigate to loading page
+    navigate('/loading');
   };
 
   return (
